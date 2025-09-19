@@ -10,7 +10,7 @@ const router = express.Router();
 router.get('/current', authenticate, async (req, res) => {
   try {
     const questionnaire = await Questionnaire.findOne({ isActive: true });
-    
+
     if (!questionnaire) {
       return errorResponse(res, 'No active questionnaire found', 404);
     }
@@ -23,18 +23,63 @@ router.get('/current', authenticate, async (req, res) => {
 });
 
 // Submit questionnaire response
+// router.post('/submit', authenticate, async (req, res) => {
+//   try {
+//     const { questionnaireId, responses } = req.body;
+//     const userId = req.user.id;
+
+//     const questionnaire = await Questionnaire.findById(questionnaireId);
+
+//     if (!questionnaire) {
+//       return errorResponse(res, 'Questionnaire not found', 404);
+//     }
+
+//     // Calculate basic score (this would be more sophisticated in production)
+//     const score = responses.reduce((total, response) => {
+//       if (typeof response.answer === 'number') {
+//         return total + response.answer;
+//       }
+//       return total;
+//     }, 0);
+
+//     const questionnaireResponse = new QuestionnaireResponse({
+//       user: userId,
+//       questionnaire: questionnaireId,
+//       responses,
+//       score
+//     });
+
+//     // Determine category based on score (simplified logic)
+//     if (score <= 5) questionnaireResponse.category = 'low';
+//     else if (score <= 10) questionnaireResponse.category = 'moderate';
+//     else if (score <= 15) questionnaireResponse.category = 'high';
+//     else questionnaireResponse.category = 'severe';
+
+//     await questionnaireResponse.save();
+
+//     return successResponse(res, { 
+//       response: questionnaireResponse,
+//       recommendations: this.getRecommendations(questionnaireResponse.category)
+//     }, 'Questionnaire submitted successfully', 201);
+//   } catch (error) {
+//     logger.error('Submit questionnaire error:', error);
+//     return errorResponse(res, 'Failed to submit questionnaire', 500);
+//   }
+// });
+
+// Submit questionnaire response
 router.post('/submit', authenticate, async (req, res) => {
   try {
     const { questionnaireId, responses } = req.body;
     const userId = req.user.id;
 
     const questionnaire = await Questionnaire.findById(questionnaireId);
-    
+
     if (!questionnaire) {
       return errorResponse(res, 'Questionnaire not found', 404);
     }
 
-    // Calculate basic score (this would be more sophisticated in production)
+    // Calculate basic score
     const score = responses.reduce((total, response) => {
       if (typeof response.answer === 'number') {
         return total + response.answer;
@@ -49,7 +94,7 @@ router.post('/submit', authenticate, async (req, res) => {
       score
     });
 
-    // Determine category based on score (simplified logic)
+    // Determine category based on score
     if (score <= 5) questionnaireResponse.category = 'low';
     else if (score <= 10) questionnaireResponse.category = 'moderate';
     else if (score <= 15) questionnaireResponse.category = 'high';
@@ -57,21 +102,27 @@ router.post('/submit', authenticate, async (req, res) => {
 
     await questionnaireResponse.save();
 
-    return successResponse(res, { 
-      response: questionnaireResponse,
-      recommendations: this.getRecommendations(questionnaireResponse.category)
-    }, 'Questionnaire submitted successfully', 201);
+    return successResponse(
+      res,
+      {
+        response: questionnaireResponse,
+        recommendations: router.getRecommendations(questionnaireResponse.category)
+      },
+      'Questionnaire submitted successfully',
+      201
+    );
   } catch (error) {
     logger.error('Submit questionnaire error:', error);
     return errorResponse(res, 'Failed to submit questionnaire', 500);
   }
 });
 
+
 // Get user's questionnaire history
 router.get('/my-responses', authenticate, async (req, res) => {
   try {
     const userId = req.user.id;
-    
+
     const responses = await QuestionnaireResponse.find({ user: userId })
       .populate('questionnaire', 'title')
       .sort({ createdAt: -1 })
@@ -89,7 +140,7 @@ router.post('/', authenticate, authorize('admin', 'superadmin'), async (req, res
   try {
     // Deactivate current questionnaire
     await Questionnaire.updateMany({}, { isActive: false });
-    
+
     const questionnaire = new Questionnaire(req.body);
     await questionnaire.save();
 
