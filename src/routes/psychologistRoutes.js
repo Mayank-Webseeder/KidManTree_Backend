@@ -1,5 +1,6 @@
 const express = require('express');
 const Psychologist = require('../models/Psychologist');
+const User = require('../models/User');
 const { authenticate, authorize } = require('../middlewares/auth');
 const { successResponse, errorResponse } = require('../utils/response');
 const logger = require('../utils/logger');
@@ -65,6 +66,41 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Psychologist profile management (authenticated psychologist)
+router.get('/profile/me', authenticate, authorize('psychologist'), async (req, res) => {
+  try {
+    const psychologist = await Psychologist.findOne({ email: req.user.email });
+    
+    if (!psychologist) {
+      return errorResponse(res, 'Psychologist profile not found', 404);
+    }
+
+    return successResponse(res, { psychologist });
+  } catch (error) {
+    logger.error('Get psychologist profile error:', error);
+    return errorResponse(res, 'Failed to retrieve psychologist profile', 500);
+  }
+});
+
+router.put('/profile/me', authenticate, authorize('psychologist'), async (req, res) => {
+  try {
+    const psychologist = await Psychologist.findOneAndUpdate(
+      { email: req.user.email },
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!psychologist) {
+      return errorResponse(res, 'Psychologist profile not found', 404);
+    }
+
+    return successResponse(res, { psychologist }, 'Profile updated successfully');
+  } catch (error) {
+    logger.error('Update psychologist profile error:', error);
+    return errorResponse(res, 'Failed to update psychologist profile', 500);
+  }
+});
+
 // Admin routes for managing psychologists
 router.post('/', authenticate, authorize('admin', 'superadmin'), async (req, res) => {
   try {
@@ -109,10 +145,42 @@ router.delete('/:id', authenticate, authorize('admin', 'superadmin'), async (req
       return errorResponse(res, 'Psychologist not found', 404);
     }
 
+    // Also deactivate the user account
+    await User.findOneAndUpdate(
+      { email: psychologist.email },
+      { isActive: false }
+    );
+
     return successResponse(res, null, 'Psychologist deactivated successfully');
   } catch (error) {
     logger.error('Delete psychologist error:', error);
     return errorResponse(res, 'Failed to deactivate psychologist', 500);
+  }
+});
+
+// Route for psychologists to deactivate their own account
+router.delete('/profile/me', authenticate, authorize('psychologist'), async (req, res) => {
+  try {
+    const psychologist = await Psychologist.findOneAndUpdate(
+      { email: req.user.email },
+      { isActive: false },
+      { new: true }
+    );
+
+    if (!psychologist) {
+      return errorResponse(res, 'Psychologist profile not found', 404);
+    }
+
+    // Also deactivate the user account
+    await User.findByIdAndUpdate(
+      req.user.id,
+      { isActive: false }
+    );
+
+    return successResponse(res, null, 'Account deactivated successfully');
+  } catch (error) {
+    logger.error('Deactivate psychologist account error:', error);
+    return errorResponse(res, 'Failed to deactivate account', 500);
   }
 });
 

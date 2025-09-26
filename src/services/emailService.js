@@ -11,7 +11,9 @@ class EmailService {
   async initialize() {
     try {
       this.transporter = nodemailer.createTransport({
-        service: emailConfig.service,
+        host: emailConfig.host,
+        port: emailConfig.port,
+        secure: emailConfig.secure,
         auth: emailConfig.auth
       });
 
@@ -106,6 +108,37 @@ class EmailService {
       return result;
     } catch (error) {
       logger.error('Failed to send admin invite:', error);
+      throw error;
+    }
+  }
+
+  async sendPsychologistInvite(email, inviteToken) {
+    try {
+      const inviteUrl = `${process.env.APP_BASE_URL}/api/auth/psychologist/verify-invite?token=${inviteToken}`;
+
+      const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: 'Psychologist Account Invitation - KidmanTree',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Psychologist Account Invitation</h2>
+            <p>You have been invited to join KidmanTree as a psychologist.</p>
+            <p>Click the link below to complete your registration and set up your profile:</p>
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="${inviteUrl}" style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">Accept Invitation</a>
+            </div>
+            <p>This invitation will expire in 24 hours.</p>
+            <p>If you have any questions, please contact our support team.</p>
+          </div>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      logger.info(`Psychologist invite sent to ${email}`);
+      return result;
+    } catch (error) {
+      logger.error('Failed to send psychologist invite:', error);
       throw error;
     }
   }

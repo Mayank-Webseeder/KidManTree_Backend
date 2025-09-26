@@ -653,6 +653,98 @@ class AuthController {
       return errorResponse(res, error.message, 400);
     }
   }
+
+  async invitePsychologist(req, res) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return errorResponse(res, 'Email is required', 400);
+      }
+
+      // Check if user already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return errorResponse(res, 'User already exists with this email', 409);
+      }
+
+      // Generate invite token and store it temporarily
+      const inviteToken = uuidv4();
+
+      // In a real application, you'd store this in a separate collection or cache
+      // For now, we'll use a simple in-memory store
+      global.psychologistInvites = global.psychologistInvites || {};
+      global.psychologistInvites[inviteToken] = {
+        email,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+      };
+
+      // Send invite email
+      const emailService = require('../services/emailService');
+      await emailService.sendPsychologistInvite(email, inviteToken);
+
+      return successResponse(res, { email }, 'Psychologist invitation sent successfully');
+    } catch (error) {
+      logger.error('Psychologist invite error:', error);
+      return errorResponse(res, error.message, 400);
+    }
+  }
+
+  async verifyPsychologistInvite(req, res) {
+    try {
+      const { token } = req.query;
+      const { password, name, contact, age, degree, experience, about, specializations } = req.body;
+
+      if (!global.psychologistInvites || !global.psychologistInvites[token]) {
+        return errorResponse(res, 'Invalid or expired invite token', 400);
+      }
+
+      const invite = global.psychologistInvites[token];
+
+      if (new Date() > invite.expiresAt) {
+        delete global.psychologistInvites[token];
+        return errorResponse(res, 'Invite token expired', 400);
+      }
+
+      // Create psychologist user
+      const psychologistData = {
+        name,
+        contact,
+        age,
+        degree,
+        experience,
+        about,
+        specializations
+      };
+
+      const psychologist = await authService.createPsychologistUser(invite.email, password, psychologistData);
+
+      // Create psychologist profile in Psychologist collection
+      const Psychologist = require('../models/Psychologist');
+      const psychologistProfile = new Psychologist({
+        name: name || 'Psychologist',
+        email: invite.email,
+        degree: degree || '',
+        experience: experience || 0,
+        about: about || '',
+        specializations: specializations || [],
+        isActive: true
+      });
+
+      await psychologistProfile.save();
+
+      // Clean up invite token
+      delete global.psychologistInvites[token];
+
+      return successResponse(res, { 
+        user: psychologist,
+        psychologistProfile: psychologistProfile
+      }, 'Psychologist account created successfully');
+    } catch (error) {
+      logger.error('Psychologist invite verification error:', error);
+      return errorResponse(res, error.message, 400);
+    }
+  }
 }
 
 module.exports = new AuthController();

@@ -2164,8 +2164,8 @@ info:
     email: support@mentalhealthplatform.com
 
 servers:
-  # - url: http://localhost:8000/api
-  - url: https://kidmantree-backend-g2la.onrender.com/api
+  - url: http://localhost:8000/api
+  # - url: https://kidmantree-backend-g2la.onrender.com/api
     description: Development server
   - url: https://kidmantree-backend-g2la.onrender.com/api
     description: Production server
@@ -2196,7 +2196,7 @@ components:
           type: integer
         role:
           type: string
-          enum: [user, admin, superadmin]
+          enum: [user, admin, superadmin, psychologist]
         isEmailVerified:
           type: boolean
         isContactVerified:
@@ -2322,6 +2322,7 @@ components:
           type: array
           items:
             type: string
+            enum: [Anxiety, Depression, PTSD, Relationships, Family Therapy, Child Psychology, Addiction, Eating Disorders, Sleep Disorders, Stress Management, Grief Counseling, Behavioral Issues]
         schedule:
           type: array
           items:
@@ -2329,12 +2330,49 @@ components:
             properties:
               day:
                 type: string
+                enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
               startTime:
                 type: string
               endTime:
                 type: string
               isAvailable:
                 type: boolean
+        isActive:
+          type: boolean
+        profileImage:
+          type: string
+        languages:
+          type: array
+          items:
+            type: string
+        sessionRate:
+          type: number
+        totalSessions:
+          type: integer
+        reviews:
+          type: array
+          items:
+            type: object
+            properties:
+              user:
+                type: string
+              rating:
+                type: integer
+                minimum: 1
+                maximum: 5
+              comment:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
+        averageRating:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     Appointment:
       type: object
@@ -2935,6 +2973,726 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  # /auth/psychologist/invite:
+  #   post:
+  #     tags: [Auth]
+  #     summary: Invite psychologist (Admin/Superadmin only)
+  #     description: Send an invitation email to a psychologist to join the platform
+  #     security:
+  #       - BearerAuth: []
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required: [email]
+  #             properties:
+  #               email:
+  #                 type: string
+  #                 format: email
+  #                 example: "psychologist@example.com"
+  #     responses:
+  #       200:
+  #         description: Psychologist invitation sent successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         email:
+  #                           type: string
+  #                           example: "psychologist@example.com"
+  #                     message:
+  #                       type: string
+  #                       example: "Psychologist invitation sent successfully"
+  #       400:
+  #         description: Invalid request or user already exists
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized - Invalid or missing token
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Admin or Superadmin role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /auth/psychologist/verify-invite:
+  #   get:
+  #     tags: [Auth]
+  #     summary: Get psychologist invite verification page
+  #     description: Display the psychologist registration form (typically used in frontend)
+  #     parameters:
+  #       - name: token
+  #         in: query
+  #         required: true
+  #         schema:
+  #           type: string
+  #         description: Invitation token from email
+  #     responses:
+  #       200:
+  #         description: Invitation page loaded successfully
+  #       400:
+  #         description: Invalid or expired invitation token
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   post:
+  #     tags: [Auth]
+  #     summary: Complete psychologist registration
+  #     description: Complete psychologist account creation using invitation token
+  #     parameters:
+  #       - name: token
+  #         in: query
+  #         required: true
+  #         schema:
+  #           type: string
+  #         description: Invitation token from email
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required: [password, name]
+  #             properties:
+  #               password:
+  #                 type: string
+  #                 format: password
+  #                 example: "SecurePassword123!"
+  #               name:
+  #                 type: string
+  #                 example: "Dr. Jane Smith"
+  #               contact:
+  #                 type: string
+  #                 example: "+1234567890"
+  #               age:
+  #                 type: integer
+  #                 minimum: 18
+  #                 example: 35
+  #               degree:
+  #                 type: string
+  #                 example: "PhD in Clinical Psychology"
+  #               experience:
+  #                 type: integer
+  #                 minimum: 0
+  #                 example: 10
+  #               about:
+  #                 type: string
+  #                 example: "Specialized in anxiety and depression treatment"
+  #               specializations:
+  #                 type: array
+  #                 items:
+  #                   type: string
+  #                   enum: [Anxiety, Depression, PTSD, Relationships, Family Therapy, Child Psychology, Addiction, Eating Disorders, Sleep Disorders, Stress Management, Grief Counseling, Behavioral Issues]
+  #                 example: ["Anxiety", "Depression", "PTSD"]
+  #     responses:
+  #       200:
+  #         description: Psychologist account created successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         user:
+  #                           $ref: '#/components/schemas/User'
+  #                         psychologistProfile:
+  #                           $ref: '#/components/schemas/Psychologist'
+  #                     message:
+  #                       type: string
+  #                       example: "Psychologist account created successfully"
+  #       400:
+  #         description: Invalid request, expired token, or validation error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /auth/profile:
+  #   get:
+  #     tags: [Auth]
+  #     summary: Get current user profile
+  #     description: Retrieve the authenticated user's profile information
+  #     security:
+  #       - BearerAuth: []
+  #     responses:
+  #       200:
+  #         description: Profile retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         user:
+  #                           $ref: '#/components/schemas/User'
+  #                     message:
+  #                       type: string
+  #                       example: "Profile retrieved successfully"
+  #       401:
+  #         description: Unauthorized - Invalid or missing token
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /psychologists:
+  #   get:
+  #     tags: [Psychologists]
+  #     summary: Get all psychologists
+  #     description: Retrieve a paginated list of active psychologists with optional filtering
+  #     parameters:
+  #       - name: specialization
+  #         in: query
+  #         description: Filter by specialization
+  #         schema:
+  #           type: string
+  #           enum: [Anxiety, Depression, PTSD, Relationships, Family Therapy, Child Psychology, Addiction, Eating Disorders, Sleep Disorders, Stress Management, Grief Counseling, Behavioral Issues]
+  #       - name: search
+  #         in: query
+  #         description: Search by name or specializations
+  #         schema:
+  #           type: string
+  #       - name: page
+  #         in: query
+  #         description: Page number for pagination
+  #         schema:
+  #           type: integer
+  #           default: 1
+  #           minimum: 1
+  #       - name: limit
+  #         in: query
+  #         description: Number of psychologists per page
+  #         schema:
+  #           type: integer
+  #           default: 10
+  #           minimum: 1
+  #           maximum: 50
+  #     responses:
+  #       200:
+  #         description: Psychologists retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         psychologists:
+  #                           type: array
+  #                           items:
+  #                             $ref: '#/components/schemas/Psychologist'
+  #                         pagination:
+  #                           type: object
+  #                           properties:
+  #                             currentPage:
+  #                               type: integer
+  #                             totalPages:
+  #                               type: integer
+  #                             totalItems:
+  #                               type: integer
+  #                     message:
+  #                       type: string
+  #                       example: "Psychologists retrieved successfully"
+  #       500:
+  #         description: Internal server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   post:
+  #     tags: [Psychologists]
+  #     summary: Create psychologist (Admin/Superadmin only)
+  #     description: Create a new psychologist profile
+  #     security:
+  #       - BearerAuth: []
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required: [name, email, degree, experience]
+  #             properties:
+  #               name:
+  #                 type: string
+  #                 example: "Dr. Jane Smith"
+  #               email:
+  #                 type: string
+  #                 format: email
+  #                 example: "jane.smith@example.com"
+  #               degree:
+  #                 type: string
+  #                 example: "PhD in Clinical Psychology"
+  #               experience:
+  #                 type: integer
+  #                 minimum: 0
+  #                 example: 10
+  #               about:
+  #                 type: string
+  #                 example: "Specialized in anxiety and depression treatment"
+  #               specializations:
+  #                 type: array
+  #                 items:
+  #                   type: string
+  #                   enum: [Anxiety, Depression, PTSD, Relationships, Family Therapy, Child Psychology, Addiction, Eating Disorders, Sleep Disorders, Stress Management, Grief Counseling, Behavioral Issues]
+  #                 example: ["Anxiety", "Depression"]
+  #               schedule:
+  #                 type: array
+  #                 items:
+  #                   type: object
+  #                   properties:
+  #                     day:
+  #                       type: string
+  #                       enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
+  #                     startTime:
+  #                       type: string
+  #                       example: "09:00"
+  #                     endTime:
+  #                       type: string
+  #                       example: "17:00"
+  #                     isAvailable:
+  #                       type: boolean
+  #                       default: true
+  #               profileImage:
+  #                 type: string
+  #               languages:
+  #                 type: array
+  #                 items:
+  #                   type: string
+  #                 example: ["English", "Spanish"]
+  #               sessionRate:
+  #                 type: number
+  #                 minimum: 0
+  #                 example: 150
+  #     responses:
+  #       201:
+  #         description: Psychologist created successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         psychologist:
+  #                           $ref: '#/components/schemas/Psychologist'
+  #                     message:
+  #                       type: string
+  #                       example: "Psychologist created successfully"
+  #       400:
+  #         description: Validation error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized - Invalid or missing token
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Admin or Superadmin role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /psychologists/{id}:
+  #   get:
+  #     tags: [Psychologists]
+  #     summary: Get psychologist by ID
+  #     description: Retrieve detailed information about a specific psychologist
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #         description: Psychologist ID
+  #     responses:
+  #       200:
+  #         description: Psychologist retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         psychologist:
+  #                           $ref: '#/components/schemas/Psychologist'
+  #                     message:
+  #                       type: string
+  #                       example: "Psychologist retrieved successfully"
+  #       404:
+  #         description: Psychologist not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   put:
+  #     tags: [Psychologists]
+  #     summary: Update psychologist (Admin/Superadmin only)
+  #     description: Update psychologist profile information
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #         description: Psychologist ID
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               name:
+  #                 type: string
+  #               degree:
+  #                 type: string
+  #               experience:
+  #                 type: integer
+  #                 minimum: 0
+  #               about:
+  #                 type: string
+  #               specializations:
+  #                 type: array
+  #                 items:
+  #                   type: string
+  #                   enum: [Anxiety, Depression, PTSD, Relationships, Family Therapy, Child Psychology, Addiction, Eating Disorders, Sleep Disorders, Stress Management, Grief Counseling, Behavioral Issues]
+  #               schedule:
+  #                 type: array
+  #                 items:
+  #                   type: object
+  #                   properties:
+  #                     day:
+  #                       type: string
+  #                       enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
+  #                     startTime:
+  #                       type: string
+  #                     endTime:
+  #                       type: string
+  #                     isAvailable:
+  #                       type: boolean
+  #               profileImage:
+  #                 type: string
+  #               languages:
+  #                 type: array
+  #                 items:
+  #                   type: string
+  #               sessionRate:
+  #                 type: number
+  #                 minimum: 0
+  #     responses:
+  #       200:
+  #         description: Psychologist updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         psychologist:
+  #                           $ref: '#/components/schemas/Psychologist'
+  #                     message:
+  #                       type: string
+  #                       example: "Psychologist updated successfully"
+  #       400:
+  #         description: Validation error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized - Invalid or missing token
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Admin or Superadmin role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Psychologist not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   delete:
+  #     tags: [Psychologists]
+  #     summary: Deactivate psychologist (Admin/Superadmin only)
+  #     description: Deactivate a psychologist account and profile
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #         description: Psychologist ID
+  #     responses:
+  #       200:
+  #         description: Psychologist deactivated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       nullable: true
+  #                     message:
+  #                       type: string
+  #                       example: "Psychologist deactivated successfully"
+  #       401:
+  #         description: Unauthorized - Invalid or missing token
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Admin or Superadmin role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Psychologist not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /psychologists/profile/me:
+  #   get:
+  #     tags: [Psychologists]
+  #     summary: Get my psychologist profile
+  #     description: Retrieve the authenticated psychologist's own profile
+  #     security:
+  #       - BearerAuth: []
+  #     responses:
+  #       200:
+  #         description: Psychologist profile retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         psychologist:
+  #                           $ref: '#/components/schemas/Psychologist'
+  #                     message:
+  #                       type: string
+  #                       example: "Psychologist profile retrieved successfully"
+  #       401:
+  #         description: Unauthorized - Invalid or missing token
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Psychologist role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Psychologist profile not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   put:
+  #     tags: [Psychologists]
+  #     summary: Update my psychologist profile
+  #     description: Update the authenticated psychologist's own profile
+  #     security:
+  #       - BearerAuth: []
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               name:
+  #                 type: string
+  #               degree:
+  #                 type: string
+  #               experience:
+  #                 type: integer
+  #                 minimum: 0
+  #               about:
+  #                 type: string
+  #               specializations:
+  #                 type: array
+  #                 items:
+  #                   type: string
+  #                   enum: [Anxiety, Depression, PTSD, Relationships, Family Therapy, Child Psychology, Addiction, Eating Disorders, Sleep Disorders, Stress Management, Grief Counseling, Behavioral Issues]
+  #               schedule:
+  #                 type: array
+  #                 items:
+  #                   type: object
+  #                   properties:
+  #                     day:
+  #                       type: string
+  #                       enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
+  #                     startTime:
+  #                       type: string
+  #                     endTime:
+  #                       type: string
+  #                     isAvailable:
+  #                       type: boolean
+  #               profileImage:
+  #                 type: string
+  #               languages:
+  #                 type: array
+  #                 items:
+  #                   type: string
+  #               sessionRate:
+  #                 type: number
+  #                 minimum: 0
+  #     responses:
+  #       200:
+  #         description: Profile updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         psychologist:
+  #                           $ref: '#/components/schemas/Psychologist'
+  #                     message:
+  #                       type: string
+  #                       example: "Profile updated successfully"
+  #       400:
+  #         description: Validation error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized - Invalid or missing token
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Psychologist role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Psychologist profile not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   delete:
+  #     tags: [Psychologists]
+  #     summary: Deactivate my psychologist account
+  #     description: Deactivate the authenticated psychologist's own account and profile
+  #     security:
+  #       - BearerAuth: []
+  #     responses:
+  #       200:
+  #         description: Account deactivated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       nullable: true
+  #                     message:
+  #                       type: string
+  #                       example: "Account deactivated successfully"
+  #       401:
+  #         description: Unauthorized - Invalid or missing token
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Psychologist role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Psychologist profile not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
   /moods/log:
     post:
       tags: [Moods]
@@ -3445,6 +4203,8 @@ paths:
 tags:
   - name: Auth
     description: Authentication and authorization
+  - name: Psychologists
+    description: Psychologist profiles and management
   - name: Moods
     description: Mood logging and tracking
   - name: Feelings

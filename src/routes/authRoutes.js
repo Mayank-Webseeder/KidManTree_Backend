@@ -23,4 +23,12 @@ router.post('/admin/invite', authenticate, authorize('admin', 'superadmin'), aut
 router.get('/admin/verify-invite', authController.verifyAdminInvite);
 router.post('/admin/verify-invite', authController.verifyAdminInvite);
 
+// Psychologist routes
+router.post('/psychologist/invite', authenticate, authorize('admin', 'superadmin'), authController.invitePsychologist);
+router.get('/psychologist/verify-invite', authController.verifyPsychologistInvite);
+router.post('/psychologist/verify-invite', authController.verifyPsychologistInvite);
+
+// Protected routes (require authentication)
+router.get('/profile', authenticate, authController.getProfile);
+
 module.exports = router;
