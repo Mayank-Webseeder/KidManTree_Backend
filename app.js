@@ -26,7 +26,9 @@ const allowedOrigins = [
   'http://localhost:5173',
   'https://app.manmitr.com',
   'http://manmitr.com',
-  'http://localhost:8000'
+  'http://localhost:8000',
+  'https://api.manmitr.com',
+  'https://kidmantree-backend-g2la.onrender.com'
 ];
 
 app.use(cors({
