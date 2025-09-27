@@ -142,6 +142,37 @@ class EmailService {
       throw error;
     }
   }
+
+  async sendPsychologistCredentials(toEmail, fullName, temporaryPassword) {
+    try {
+      const mailOptions = {
+        from: emailConfig.from,
+        to: toEmail,
+        subject: 'Your Psychologist Account Details - KidmanTree',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Welcome to KidmanTree</h2>
+            <p>Hi ${fullName || 'Psychologist'},</p>
+            <p>Your psychologist account has been created by the administration.</p>
+            <p>You can log in using the same login route as other users.</p>
+            <div style="margin: 16px 0; padding: 12px 16px; background: #f6f8fa; border-radius: 6px;">
+              <p style="margin: 0;">Email: <strong>${toEmail}</strong></p>
+              <p style="margin: 0;">Temporary Password: <strong>${temporaryPassword}</strong></p>
+            </div>
+            <p>Please change your password after logging in.</p>
+            <p style="color: #555;">Regards,<br/>KidmanTree Team</p>
+          </div>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      logger.info(`Psychologist credentials email sent to ${toEmail}`);
+      return result;
+    } catch (error) {
+      logger.error('Failed to send psychologist credentials email:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new EmailService();

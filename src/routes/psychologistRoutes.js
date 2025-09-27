@@ -10,14 +10,17 @@ const router = express.Router();
 // Get all psychologists (public)
 router.get('/', async (req, res) => {
   try {
-    const { specialization, page = 1, limit = 10, search } = req.query;
-    
+    const { specialization, search } = req.query;
+    const page = Math.max(parseInt(req.query.page || '1', 10) || 1, 1);
+    const limitRaw = parseInt(req.query.limit || '10', 10) || 10;
+    const limit = Math.min(Math.max(limitRaw, 1), 100);
+
     const query = { isActive: true };
-    
+
     if (specialization) {
       query.specializations = { $in: [specialization] };
     }
-    
+
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -26,9 +29,8 @@ router.get('/', async (req, res) => {
     }
 
     const psychologists = await Psychologist.find(query)
-      .select('-reviews') // Exclude reviews for list view
       .sort({ rating: -1, name: 1 })
-      .limit(limit * 1)
+      .limit(limit)
       .skip((page - 1) * limit);
 
     const total = await Psychologist.countDocuments(query);
@@ -43,6 +45,36 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     logger.error('Get psychologists error:', error);
+    return errorResponse(res, 'Failed to retrieve psychologists', 500);
+  }
+});
+
+// Get all psychologists without any filters (public)
+router.get('/getallphycologist', async (req, res) => {
+  try {
+    const page = Math.max(parseInt(req.query.page || '1', 10) || 1, 1);
+    const limitRaw = parseInt(req.query.limit || '10', 10) || 10;
+    const limit = Math.min(Math.max(limitRaw, 1), 100);
+
+    const query = { isActive: true };
+
+    const psychologists = await Psychologist.find(query)
+      .sort({ rating: -1, name: 1 })
+      .limit(limit)
+      .skip((page - 1) * limit);
+
+    const total = await Psychologist.countDocuments(query);
+
+    return successResponse(res, {
+      psychologists,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total
+      }
+    });
+  } catch (error) {
+    logger.error('Get all psychologists (no filter) error:', error);
     return errorResponse(res, 'Failed to retrieve psychologists', 500);
   }
 });
@@ -70,7 +102,7 @@ router.get('/:id', async (req, res) => {
 router.get('/profile/me', authenticate, authorize('psychologist'), async (req, res) => {
   try {
     const psychologist = await Psychologist.findOne({ email: req.user.email });
-    
+
     if (!psychologist) {
       return errorResponse(res, 'Psychologist profile not found', 404);
     }
@@ -104,13 +136,55 @@ router.put('/profile/me', authenticate, authorize('psychologist'), async (req, r
 // Admin routes for managing psychologists
 router.post('/', authenticate, authorize('admin', 'superadmin'), async (req, res) => {
   try {
-    const psychologist = new Psychologist(req.body);
-    await psychologist.save();
+    const { firstName, lastName, email, password, degree, experience, about, specializations, languages, sessionRate } = req.body;
 
-    return successResponse(res, { psychologist }, 'Psychologist created successfully', 201);
+    if (!firstName || !lastName || !email || !password || !degree || experience === undefined) {
+      return errorResponse(res, 'firstName, lastName, email, password, degree, experience are required', 400);
+    }
+
+    // Create user with psychologist role
+    const fullName = `${firstName} ${lastName}`.trim();
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return errorResponse(res, 'User already exists with this email', 409);
+    }
+
+    const bcrypt = require('bcrypt');
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const user = await User.create({
+      name: fullName,
+      email,
+      password: hashedPassword,
+      contact: `+${Math.floor(1000000000 + Math.random() * 8999999999)}`,
+      age: 25,
+      role: 'psychologist',
+      isEmailVerified: true,
+      isContactVerified: true,
+      isActive: true
+    });
+
+    // Create psychologist profile
+    const psychologist = await Psychologist.create({
+      name: fullName,
+      email,
+      degree,
+      experience,
+      about,
+      specializations,
+      languages,
+      sessionRate,
+      isActive: true
+    });
+
+    // Send credentials via email
+    const emailService = require('../services/emailService');
+    await emailService.sendPsychologistCredentials(email, fullName, password);
+
+    return successResponse(res, { user, psychologist }, 'Psychologist created and credentials emailed', 201);
   } catch (error) {
     logger.error('Create psychologist error:', error);
-    return errorResponse(res, 'Failed to create psychologist', 500);
+    return errorResponse(res, error.message || 'Failed to create psychologist', 500);
   }
 });
 
