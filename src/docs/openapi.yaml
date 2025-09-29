@@ -8,6 +8,8 @@ info:
     email: support@mentalhealthplatform.com
 
 servers:
+  - url: https://kidmantree-backend-1.onrender.com/api
+    description: fixing
   - url: https://kidmantree-backend-g2la.onrender.com/api
     description: Development server 
   - url: https://api.manmitr.com/api

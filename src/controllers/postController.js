@@ -4,6 +4,7 @@ const { successResponse, errorResponse } = require('../utils/response');
 const { postSchema } = require('../utils/validators');
 const logger = require('../utils/logger');
 
+
 class PostController {
   async createPost(req, res) {
     try {
@@ -34,7 +35,7 @@ class PostController {
   async getPosts(req, res) {
     try {
       const { page = 1, limit = 10, moodTag, author } = req.query;
-      
+
       const query = { isDeleted: false, visibility: 'public' };
       if (moodTag) query.moodTag = moodTag;
       if (author) query.author = author;
@@ -67,14 +68,14 @@ class PostController {
         _id: req.params.id,
         isDeleted: false
       })
-      .populate('author', 'name profile.avatar')
-      .populate({
-        path: 'comments',
-        populate: {
-          path: 'author',
-          select: 'name profile.avatar'
-        }
-      });
+        .populate('author', 'name profile.avatar')
+        .populate({
+          path: 'comments',
+          populate: {
+            path: 'author',
+            select: 'name profile.avatar'
+          }
+        });
 
       if (!post) {
         return errorResponse(res, 'Post not found', 404);
@@ -91,7 +92,7 @@ class PostController {
     try {
       const postId = req.params.id;
       const userId = req.user.id;
-      
+
       const post = await Post.findOne({
         _id: postId,
         author: userId,
@@ -103,7 +104,7 @@ class PostController {
       }
 
       const { title, content, moodTag, visibility } = req.body;
-      
+
       if (title) post.title = title;
       if (content) post.content = content;
       if (moodTag) post.moodTag = moodTag;
@@ -124,9 +125,9 @@ class PostController {
       const postId = req.params.id;
       const userId = req.user.id;
       const userRole = req.user.role;
-      
+
       const query = { _id: postId, isDeleted: false };
-      
+
       // Only post author or admin can delete
       if (userRole !== 'admin' && userRole !== 'superadmin') {
         query.author = userId;
@@ -154,17 +155,17 @@ class PostController {
       const userId = req.user.id;
 
       const post = await Post.findOne({ _id: postId, isDeleted: false });
-      
+
       if (!post) {
         return errorResponse(res, 'Post not found', 404);
       }
 
       // Remove from unlikes if exists
       post.unlikes = post.unlikes.filter(unlike => unlike.user.toString() !== userId);
-      
+
       // Check if already liked
       const existingLike = post.likes.find(like => like.user.toString() === userId);
-      
+
       if (existingLike) {
         // Remove like
         post.likes = post.likes.filter(like => like.user.toString() !== userId);
@@ -197,7 +198,7 @@ class PostController {
       }
 
       const post = await Post.findOne({ _id: postId, isDeleted: false });
-      
+
       if (!post) {
         return errorResponse(res, 'Post not found', 404);
       }
@@ -232,10 +233,10 @@ class PostController {
         post: postId,
         isDeleted: false
       })
-      .populate('author', 'name profile.avatar')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+        .populate('author', 'name profile.avatar')
+        .sort({ createdAt: -1 })
+        .limit(limit * 1)
+        .skip((page - 1) * limit);
 
       const total = await Comment.countDocuments({
         post: postId,
