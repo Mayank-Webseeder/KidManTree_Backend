@@ -56,6 +56,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     sparse: true
   },
+  resetToken: {
+    type: String,
+    sparse: true
+  },
+  resetExpires: {
+    type: Date,
+    sparse: true
+  },
   parentConsent: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ParentConsent'

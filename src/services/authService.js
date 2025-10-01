@@ -560,6 +560,100 @@ class AuthService {
 
     return psychologist.toSafeObject();
   }
+
+  // Forgot Password functionality
+  async initiateForgotPassword(email) {
+    const user = await User.findOne({ email, isActive: true });
+
+    if (!user) {
+      throw new Error('User not found with this email address');
+    }
+
+    // Generate reset token
+    const resetToken = uuidv4();
+    const resetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Store reset token in user document
+    await User.findByIdAndUpdate(user._id, {
+      $set: {
+        resetToken,
+        resetExpires
+      }
+    });
+
+    // Send reset email
+    await emailService.sendPasswordResetEmail(email, resetToken, user.name);
+
+    logger.info(`Password reset initiated for: ${email}`);
+
+    return {
+      success: true,
+      message: 'Password reset instructions sent to your email address'
+    };
+  }
+
+  async resetPassword(resetToken, newPassword) {
+    const user = await User.findOne({
+      resetToken,
+      resetExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      throw new Error('Invalid or expired reset token');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password and clear reset token
+    await User.findByIdAndUpdate(user._id, {
+      $set: {
+        password: hashedPassword
+      },
+      $unset: {
+        resetToken: 1,
+        resetExpires: 1
+      }
+    });
+
+    logger.info(`Password reset completed for: ${user.email}`);
+
+    return {
+      success: true,
+      message: 'Password has been reset successfully'
+    };
+  }
+
+  async changePassword(userId, currentPassword, newPassword) {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      throw new Error('Current password is incorrect');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password
+    await User.findByIdAndUpdate(userId, {
+      $set: {
+        password: hashedPassword
+      }
+    });
+
+    logger.info(`Password changed for user: ${user.email}`);
+
+    return {
+      success: true,
+      message: 'Password changed successfully'
+    };
+  }
 }
 
 module.exports = new AuthService();

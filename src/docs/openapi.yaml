@@ -8,8 +8,6 @@ info:
     email: support@mentalhealthplatform.com
 
 servers:
-  - url: https://kidmantree-backend-1.onrender.com/api
-    description: fixing
   - url: https://kidmantree-backend-g2la.onrender.com/api
     description: Development server 
   - url: https://api.manmitr.com/api
@@ -170,7 +168,21 @@ components:
           type: array
           items:
             type: string
-            enum: [Anxiety, Depression, PTSD, Relationships, Family Therapy, Child Psychology, Addiction, Eating Disorders, Sleep Disorders, Stress Management, Grief Counseling, Behavioral Issues]
+        city:
+          type: string
+        contactNumber:
+          type: string
+        role:
+          type: string
+          enum: [psychologist, counselor]
+        aadharNumber:
+          type: string
+        aadharDocument:
+          type: string
+        uploadDocuments:
+          type: array
+          items:
+            type: string
         schedule:
           type: array
           items:
@@ -447,6 +459,50 @@ components:
           items:
             type: object
         timestamp:
+          type: string
+          format: date-time
+
+    MusicCategory:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        thumbnailPath:
+          type: string
+        createdBy:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Music:
+      type: object
+      properties:
+        _id:
+          type: string
+        category:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/MusicCategory'
+        title:
+          type: string
+        genre:
+          type: string
+        audioPath:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
           type: string
           format: date-time
 
@@ -1008,6 +1064,161 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Initiate password reset
+      description: Send password reset instructions to user's email address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+      responses:
+        200:
+          description: Password reset instructions sent successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          success:
+                            type: boolean
+                            example: true
+                          message:
+                            type: string
+                            example: "Password reset instructions sent to your email address"
+                      message:
+                        type: string
+                        example: "Password reset instructions sent to your email address"
+        400:
+          description: Invalid request or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password using token
+      description: Reset user password using the token received via email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resetToken, newPassword]
+              properties:
+                resetToken:
+                  type: string
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "NewSecurePassword123!"
+      responses:
+        200:
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          success:
+                            type: boolean
+                            example: true
+                          message:
+                            type: string
+                            example: "Password has been reset successfully"
+                      message:
+                        type: string
+                        example: "Password has been reset successfully"
+        400:
+          description: Invalid or expired reset token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change password (authenticated users)
+      description: Change password for authenticated users
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                  example: "CurrentPassword123!"
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "NewSecurePassword123!"
+      responses:
+        200:
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          success:
+                            type: boolean
+                            example: true
+                          message:
+                            type: string
+                            example: "Password changed successfully"
+                      message:
+                        type: string
+                        example: "Password changed successfully"
+        400:
+          description: Invalid current password or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /psychologists:
     get:
       tags: [Psychologists]
@@ -1088,7 +1299,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [firstName, lastName, email, password, degree, experience]
+              required: [firstName, lastName, email, password, degree, experience, city, contactNumber, aadharNumber, aadharDocument]
               properties:
                 firstName:
                   type: string
@@ -1129,6 +1340,29 @@ paths:
                   type: number
                   minimum: 0
                   example: 150
+                city:
+                  type: string
+                  example: "Mumbai"
+                contactNumber:
+                  type: string
+                  example: "+919876543210"
+                role:
+                  type: string
+                  enum: [psychologist, counselor]
+                  default: psychologist
+                  example: "psychologist"
+                aadharNumber:
+                  type: string
+                  pattern: "^[0-9]{12}$"
+                  example: "123456789012"
+                aadharDocument:
+                  type: string
+                  example: "https://example.com/documents/aadhar.pdf"
+                uploadDocuments:
+                  type: array
+                  items:
+                    type: string
+                  example: ["https://example.com/documents/degree.pdf", "https://example.com/documents/license.pdf"]
                 schedule:
                   type: array
                   items:
@@ -2047,6 +2281,1101 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  # /music/categories:
+  #   get:
+  #     tags: [Music]
+  #     summary: Get all music categories
+  #     responses:
+  #       200:
+  #         description: Categories retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         categories:
+  #                           type: array
+  #                           items:
+  #                             $ref: '#/components/schemas/MusicCategory'
+  #                     message:
+  #                       type: string
+  #                       example: Categories retrieved successfully
+  #       500:
+  #         description: Internal server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   post:
+  #     tags: [Music]
+  #     summary: Create music category (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         multipart/form-data:
+  #           schema:
+  #             type: object
+  #             required: [name, thumbnail]
+  #             properties:
+  #               name:
+  #                 type: string
+  #               thumbnail:
+  #                 type: string
+  #                 format: binary
+  #     responses:
+  #       201:
+  #         description: Category created successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         category:
+  #                           $ref: '#/components/schemas/MusicCategory'
+  #                     message:
+  #                       type: string
+  #                       example: Category created successfully
+  #       400:
+  #         description: Validation error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /music/categories/{id}:
+  #   put:
+  #     tags: [Music]
+  #     summary: Update music category (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: false
+  #       content:
+  #         multipart/form-data:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               name:
+  #                 type: string
+  #               thumbnail:
+  #                 type: string
+  #                 format: binary
+  #     responses:
+  #       200:
+  #         description: Category updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         category:
+  #                           $ref: '#/components/schemas/MusicCategory'
+  #                     message:
+  #                       type: string
+  #                       example: Category updated successfully
+  #       400:
+  #         description: Validation error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   delete:
+  #     tags: [Music]
+  #     summary: Delete music category (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Category and its music deleted successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /music/categories/{categoryId}/music:
+  #   post:
+  #     tags: [Music]
+  #     summary: Add music to category (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: categoryId
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         multipart/form-data:
+  #           schema:
+  #             type: object
+  #             required: [title, audio]
+  #             properties:
+  #               title:
+  #                 type: string
+  #               genre:
+  #                 type: string
+  #               audio:
+  #                 type: string
+  #                 format: binary
+  #     responses:
+  #       201:
+  #         description: Music added successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         music:
+  #                           $ref: '#/components/schemas/Music'
+  #                     message:
+  #                       type: string
+  #                       example: Music added successfully
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /music/categories/{categoryId}/music:
+  #   get:
+  #     tags: [Music]
+  #     summary: Get music by category (public)
+  #     parameters:
+  #       - name: categoryId
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #       - name: includeInactive
+  #         in: query
+  #         schema:
+  #           type: boolean
+  #           default: false
+  #     responses:
+  #       200:
+  #         description: Music retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         musics:
+  #                           type: array
+  #                           items:
+  #                             $ref: '#/components/schemas/Music'
+  #                     message:
+  #                       type: string
+  #                       example: Music retrieved successfully
+  #       404:
+  #         description: Category not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       500:
+  #         description: Internal server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Category not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /music/categories/{categoryId}/music/bulk:
+  #   post:
+  #     tags: [Music]
+  #     summary: Bulk add music to category (Admin/Superadmin)
+  #     description: Upload multiple audio files as audios[]; optional payload can map indices to titles/genres
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: categoryId
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         multipart/form-data:
+  #           schema:
+  #             type: object
+  #             required: [audios]
+  #             properties:
+  #               audios:
+  #                 type: array
+  #                 items:
+  #                   type: string
+  #                   format: binary
+  #               payload:
+  #                 type: string
+  #                 description: JSON array mapping index to { title, genre }
+  #     responses:
+  #       201:
+  #         description: Bulk music uploaded successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         musics:
+  #                           type: array
+  #                           items:
+  #                             $ref: '#/components/schemas/Music'
+  #                     message:
+  #                       type: string
+  #                       example: Bulk music uploaded successfully
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Category not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /music/music/{id}:
+  #   put:
+  #     tags: [Music]
+  #     summary: Update music (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: false
+  #       content:
+  #         multipart/form-data:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               title:
+  #                 type: string
+  #               genre:
+  #                 type: string
+  #               audio:
+  #                 type: string
+  #                 format: binary
+  #     responses:
+  #       200:
+  #         description: Music updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         music:
+  #                           $ref: '#/components/schemas/Music'
+  #                     message:
+  #                       type: string
+  #                       example: Music updated successfully
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /music/music/{id}/status:
+  #   patch:
+  #     tags: [Music]
+  #     summary: Set music status (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required: [isActive]
+  #             properties:
+  #               isActive:
+  #                 type: boolean
+  #     responses:
+  #       200:
+  #         description: Music status updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         music:
+  #                           $ref: '#/components/schemas/Music'
+  #                     message:
+  #                       type: string
+  #                       example: Music status updated successfully
+  #       400:
+  #         description: Validation error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Music not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  
+
+  # /podcasts:
+  #   get:
+  #     tags: [Podcasts]
+  #     summary: Get all podcasts (public)
+  #     responses:
+  #       200:
+  #         description: Podcasts retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         podcasts:
+  #                           type: array
+  #                           items:
+  #                             $ref: '#/components/schemas/Podcast'
+  #                     message:
+  #                       type: string
+  #                       example: Podcasts retrieved successfully
+  #       500:
+  #         description: Internal server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   post:
+  #     tags: [Podcasts]
+  #     summary: Create podcast (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         multipart/form-data:
+  #           schema:
+  #             type: object
+  #             required: [title, youtubeLink, thumbnail]
+  #             properties:
+  #               title:
+  #                 type: string
+  #               time:
+  #                 type: string
+  #               youtubeLink:
+  #                 type: string
+  #               thumbnail:
+  #                 type: string
+  #                 format: binary
+  #     responses:
+  #       201:
+  #         description: Podcast created successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         podcast:
+  #                           $ref: '#/components/schemas/Podcast'
+  #                     message:
+  #                       type: string
+  #                       example: Podcast created successfully
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /podcasts/admin:
+  #   get:
+  #     tags: [Podcasts]
+  #     summary: Admin list podcasts
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: includeInactive
+  #         in: query
+  #         schema:
+  #           type: boolean
+  #           default: false
+  #     responses:
+  #       200:
+  #         description: Podcasts retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /podcasts/{id}:
+  #   put:
+  #     tags: [Podcasts]
+  #     summary: Update podcast (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: false
+  #       content:
+  #         multipart/form-data:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               title:
+  #                 type: string
+  #               time:
+  #                 type: string
+  #               youtubeLink:
+  #                 type: string
+  #               thumbnail:
+  #                 type: string
+  #                 format: binary
+  #     responses:
+  #       200:
+  #         description: Podcast updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   delete:
+  #     tags: [Podcasts]
+  #     summary: Delete podcast (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Podcast deleted successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /podcasts/{id}/status:
+  #   patch:
+  #     tags: [Podcasts]
+  #     summary: Set podcast status (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required: [isActive]
+  #             properties:
+  #               isActive:
+  #                 type: boolean
+  #     responses:
+  #       200:
+  #         description: Podcast status updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /reels:
+  #   get:
+  #     tags: [Reels]
+  #     summary: Get all reels (public)
+  #     responses:
+  #       200:
+  #         description: Reels retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+
+  # /reels/categories/{categoryId}:
+  #   get:
+  #     tags: [Reels]
+  #     summary: Get reels by category (public)
+  #     parameters:
+  #       - name: categoryId
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Reels retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+
+  # /reels/{id}/like:
+  #   post:
+  #     tags: [Reels]
+  #     summary: Like a reel (authenticated)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Reel liked
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /reels/categories:
+  #   post:
+  #     tags: [Reels]
+  #     summary: Create reel category (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required: [name]
+  #             properties:
+  #               name:
+  #                 type: string
+  #     responses:
+  #       201:
+  #         description: Reel category created successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+
+  # /reels/categories/{id}:
+  #   put:
+  #     tags: [Reels]
+  #     summary: Update reel category (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: false
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               name:
+  #                 type: string
+  #               isActive:
+  #                 type: boolean
+  #     responses:
+  #       200:
+  #         description: Reel category updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+  #   delete:
+  #     tags: [Reels]
+  #     summary: Delete reel category (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Reel category deleted successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /reels/categories/{categoryId}/reels:
+  #   post:
+  #     tags: [Reels]
+  #     summary: Create reel (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: categoryId
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         multipart/form-data:
+  #           schema:
+  #             type: object
+  #             required: [title, video]
+  #             properties:
+  #               title:
+  #                 type: string
+  #               description:
+  #                 type: string
+  #               video:
+  #                 type: string
+  #                 format: binary
+  #     responses:
+  #       201:
+  #         description: Reel created successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+
+  # /reels/reels/{id}:
+  #   put:
+  #     tags: [Reels]
+  #     summary: Update reel (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: false
+  #       content:
+  #         multipart/form-data:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               title:
+  #                 type: string
+  #               description:
+  #                 type: string
+  #               video:
+  #                 type: string
+  #                 format: binary
+  #     responses:
+  #       200:
+  #         description: Reel updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+  #   delete:
+  #     tags: [Reels]
+  #     summary: Delete reel (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Reel deleted successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+  #       403:
+  #         description: Forbidden
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Music not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   delete:
+  #     tags: [Music]
+  #     summary: Delete music (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Music deleted successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Music not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized - Invalid or missing token
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Insufficient permissions (admin role required)
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       500:
+  #         description: Internal server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  /users/admin/list:
+    get:
+      tags: [Users]
+      summary: List users (Admin/Superadmin)
+      description: Retrieve users with optional filters by role, active status, and search text
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [user, admin, superadmin, psychologist]
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        200:
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          users:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/User'
+                          pagination:
+                            type: object
+                            properties:
+                              currentPage:
+                                type: integer
+                              totalPages:
+                                type: integer
+                              totalItems:
+                                type: integer
+                      message:
+                        type: string
+                        example: Users retrieved successfully
         401:
           description: Unauthorized - Invalid or missing token
           content:
@@ -2054,13 +3383,214 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         403:
-          description: Forbidden - Insufficient permissions (admin role required)
+          description: Forbidden - Admin or Superadmin role required
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        500:
-          description: Internal server error
+
+  /users/admin/{id}/status:
+    patch:
+      tags: [Users]
+      summary: Set user active status (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive:
+                  type: boolean
+      responses:
+        200:
+          description: User status updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+                      message:
+                        type: string
+                        example: User status updated successfully
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin or Superadmin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/admin/{id}:
+    put:
+      tags: [Users]
+      summary: Update user profile (Admin/Superadmin)
+      description: Update general user fields; if the user is a psychologist, optional `psychologist` object updates role-specific fields
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                contact:
+                  type: string
+                age:
+                  type: integer
+                profile:
+                  type: object
+                  properties:
+                    avatar:
+                      type: string
+                    bio:
+                      type: string
+                    interests:
+                      type: array
+                      items:
+                        type: string
+                    emergencyContact:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        phone:
+                          type: string
+                        relationship:
+                          type: string
+                psychologist:
+                  type: object
+                  description: Only used when updating a psychologist user
+      responses:
+        200:
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+                      message:
+                        type: string
+                        example: User updated successfully
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin or Superadmin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Users]
+      summary: Delete user account (Admin/Superadmin)
+      description: Permanently delete a user and associated role-specific records (e.g., psychologist profile)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: User account deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        nullable: true
+                      message:
+                        type: string
+                        example: User account deleted successfully
+        401:
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin or Superadmin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User not found
           content:
             application/json:
               schema:
@@ -2069,6 +3599,8 @@ paths:
 tags:
   - name: Auth
     description: Authentication and authorization
+  - name: Users
+    description: User management and administration
   - name: Psychologists
     description: Psychologist profiles and management
   - name: Moods
@@ -2077,3 +3609,9 @@ tags:
     description: Daily feeling submissions
   - name: Questionnaires
     description: Mental health assessments
+  # - name: Music
+  #   description: Music categories and tracks management
+  # - name: Podcasts
+  #   description: Podcast management
+  # - name: Reels
+  #   description: Reels categories and videos management

@@ -408,6 +408,66 @@ class AuthController {
       return errorResponse(res, error.message, 400);
     }
   }
+
+  // Forgot Password functionality
+  async forgotPassword(req, res) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return errorResponse(res, 'Email is required', 400);
+      }
+
+      const result = await authService.initiateForgotPassword(email);
+
+      return successResponse(res, result, result.message);
+    } catch (error) {
+      logger.error('Forgot password error:', error);
+      return errorResponse(res, error.message, 400);
+    }
+  }
+
+  async resetPassword(req, res) {
+    try {
+      const { resetToken, newPassword } = req.body;
+
+      if (!resetToken || !newPassword) {
+        return errorResponse(res, 'Reset token and new password are required', 400);
+      }
+
+      if (newPassword.length < 8) {
+        return errorResponse(res, 'Password must be at least 8 characters long', 400);
+      }
+
+      const result = await authService.resetPassword(resetToken, newPassword);
+
+      return successResponse(res, result, result.message);
+    } catch (error) {
+      logger.error('Reset password error:', error);
+      return errorResponse(res, error.message, 400);
+    }
+  }
+
+  async changePassword(req, res) {
+    try {
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return errorResponse(res, 'Current password and new password are required', 400);
+      }
+
+      if (newPassword.length < 8) {
+        return errorResponse(res, 'New password must be at least 8 characters long', 400);
+      }
+
+      const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
+
+      return successResponse(res, result, result.message);
+    } catch (error) {
+      logger.error('Change password error:', error);
+      return errorResponse(res, error.message, 400);
+    }
+  }
 }
 
 module.exports = new AuthController();

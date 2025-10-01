@@ -136,10 +136,28 @@ router.put('/profile/me', authenticate, authorize('psychologist'), async (req, r
 // Admin routes for managing psychologists
 router.post('/', authenticate, authorize('admin', 'superadmin'), async (req, res) => {
   try {
-    const { firstName, lastName, email, password, degree, experience, about, specializations, languages, sessionRate } = req.body;
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      degree,
+      experience,
+      about,
+      specializations,
+      languages,
+      sessionRate,
+      city,
+      contactNumber,
+      role,
+      aadharNumber,
+      aadharDocument,
+      uploadDocuments
+    } = req.body;
 
-    if (!firstName || !lastName || !email || !password || !degree || experience === undefined) {
-      return errorResponse(res, 'firstName, lastName, email, password, degree, experience are required', 400);
+    if (!firstName || !lastName || !email || !password || !degree || experience === undefined ||
+      !city || !contactNumber || !aadharNumber || !aadharDocument) {
+      return errorResponse(res, 'firstName, lastName, email, password, degree, experience, city, contactNumber, aadharNumber, aadharDocument are required', 400);
     }
 
     // Create user with psychologist role
@@ -149,6 +167,18 @@ router.post('/', authenticate, authorize('admin', 'superadmin'), async (req, res
       return errorResponse(res, 'User already exists with this email', 409);
     }
 
+    // Check if contact number already exists
+    const existingContact = await User.findOne({ contact: contactNumber });
+    if (existingContact) {
+      return errorResponse(res, 'User already exists with this contact number', 409);
+    }
+
+    // Check if aadhar number already exists
+    const existingAadhar = await Psychologist.findOne({ aadharNumber });
+    if (existingAadhar) {
+      return errorResponse(res, 'Psychologist already exists with this Aadhar number', 409);
+    }
+
     const bcrypt = require('bcrypt');
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -156,7 +186,7 @@ router.post('/', authenticate, authorize('admin', 'superadmin'), async (req, res
       name: fullName,
       email,
       password: hashedPassword,
-      contact: `+${Math.floor(1000000000 + Math.random() * 8999999999)}`,
+      contact: contactNumber,
       age: 25,
       role: 'psychologist',
       isEmailVerified: true,
@@ -174,6 +204,12 @@ router.post('/', authenticate, authorize('admin', 'superadmin'), async (req, res
       specializations,
       languages,
       sessionRate,
+      city,
+      contactNumber,
+      role: role || 'psychologist',
+      aadharNumber,
+      aadharDocument,
+      uploadDocuments: uploadDocuments || [],
       isActive: true
     });
 

@@ -11,6 +11,10 @@ router.post('/verify-contact-otp', authController.verifyContactOTP);
 router.post('/verify-email-otp', authController.verifyEmailOTP);
 router.post('/resend-otp', authController.resendOTP);
 
+// Forgot Password routes
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
+
 
 router.post('/parent/init', authController.initiateParentConsent);
 router.post('/parent/verify-email-otp', authController.verifyParentEmailOTP);
@@ -30,5 +34,6 @@ router.post('/psychologist/verify-invite', authController.verifyPsychologistInvi
 
 // Protected routes (require authentication)
 router.get('/profile', authenticate, authController.getProfile);
+router.post('/change-password', authenticate, authController.changePassword);
 
 module.exports = router;

@@ -11,6 +11,9 @@ const feelingRoutes = require('./feelingRoutes');
 const analyticsRoutes = require('./analyticsRoutes');
 const chatbotRoutes = require('./chatbotRoutes');
 const contentRoutes = require('./contentRoutes');
+const musicRoutes = require('./musicRoutes');
+const podcastRoutes = require('./podcastRoutes');
+const reelRoutes = require('./reelRoutes');
 
 const router = express.Router();
 
@@ -27,6 +30,9 @@ router.use('/feelings', feelingRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/chatbot', chatbotRoutes);
 router.use('/content', contentRoutes);
+router.use('/music', musicRoutes);
+router.use('/podcasts', podcastRoutes);
+router.use('/reels', reelRoutes);
 
 // Health check for API
 router.get('/health', (req, res) => {

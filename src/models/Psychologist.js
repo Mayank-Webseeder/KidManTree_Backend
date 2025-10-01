@@ -76,6 +76,38 @@ const psychologistSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  // New fields
+  city: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  contactNumber: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+  role: {
+    type: String,
+    enum: ['psychologist', 'counselor'],
+    default: 'psychologist',
+    required: true
+  },
+  aadharNumber: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    match: /^[0-9]{12}$/
+  },
+  aadharDocument: {
+    type: String, // URL to uploaded document
+    required: true
+  },
+  uploadDocuments: [{
+    type: String // Array of URLs to uploaded documents
+  }],
   reviews: [{
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -99,7 +131,7 @@ const psychologistSchema = new mongoose.Schema({
   timestamps: true
 });
 
-psychologistSchema.virtual('averageRating').get(function() {
+psychologistSchema.virtual('averageRating').get(function () {
   if (this.reviews.length === 0) return 0;
   const sum = this.reviews.reduce((acc, review) => acc + review.rating, 0);
   return Math.round((sum / this.reviews.length) * 10) / 10;
