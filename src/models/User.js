@@ -64,6 +64,11 @@ const userSchema = new mongoose.Schema({
     type: Date,
     sparse: true
   },
+  reset: {
+    otp: { type: String },
+    expiresAt: { type: Date },
+    attempts: { type: Number, default: 0 }
+  },
   parentConsent: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ParentConsent'

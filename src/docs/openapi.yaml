@@ -2282,491 +2282,491 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  # /music/categories:
-  #   get:
-  #     tags: [Music]
-  #     summary: Get all music categories
-  #     responses:
-  #       200:
-  #         description: Categories retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         categories:
-  #                           type: array
-  #                           items:
-  #                             $ref: '#/components/schemas/MusicCategory'
-  #                     message:
-  #                       type: string
-  #                       example: Categories retrieved successfully
-  #       500:
-  #         description: Internal server error
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /music/categories:
+    get:
+      tags: [Music]
+      summary: Get all music categories
+      responses:
+        200:
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          categories:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/MusicCategory'
+                      message:
+                        type: string
+                        example: Categories retrieved successfully
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  #   post:
-  #     tags: [Music]
-  #     summary: Create music category (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         multipart/form-data:
-  #           schema:
-  #             type: object
-  #             required: [name, thumbnail]
-  #             properties:
-  #               name:
-  #                 type: string
-  #               thumbnail:
-  #                 type: string
-  #                 format: binary
-  #     responses:
-  #       201:
-  #         description: Category created successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         category:
-  #                           $ref: '#/components/schemas/MusicCategory'
-  #                     message:
-  #                       type: string
-  #                       example: Category created successfully
-  #       400:
-  #         description: Validation error
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Music]
+      summary: Create music category (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name, thumbnail]
+              properties:
+                name:
+                  type: string
+                thumbnail:
+                  type: string
+                  format: binary
+      responses:
+        201:
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          category:
+                            $ref: '#/components/schemas/MusicCategory'
+                      message:
+                        type: string
+                        example: Category created successfully
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /music/categories/{id}:
-  #   put:
-  #     tags: [Music]
-  #     summary: Update music category (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: false
-  #       content:
-  #         multipart/form-data:
-  #           schema:
-  #             type: object
-  #             properties:
-  #               name:
-  #                 type: string
-  #               thumbnail:
-  #                 type: string
-  #                 format: binary
-  #     responses:
-  #       200:
-  #         description: Category updated successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         category:
-  #                           $ref: '#/components/schemas/MusicCategory'
-  #                     message:
-  #                       type: string
-  #                       example: Category updated successfully
-  #       400:
-  #         description: Validation error
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /music/categories/{id}:
+    put:
+      tags: [Music]
+      summary: Update music category (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                thumbnail:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          category:
+                            $ref: '#/components/schemas/MusicCategory'
+                      message:
+                        type: string
+                        example: Category updated successfully
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  #   delete:
-  #     tags: [Music]
-  #     summary: Delete music category (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Category and its music deleted successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Music]
+      summary: Delete music category (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Category and its music deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /music/categories/{categoryId}/music:
-  #   post:
-  #     tags: [Music]
-  #     summary: Add music to category (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: categoryId
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         multipart/form-data:
-  #           schema:
-  #             type: object
-  #             required: [title, audio]
-  #             properties:
-  #               title:
-  #                 type: string
-  #               genre:
-  #                 type: string
-  #               audio:
-  #                 type: string
-  #                 format: binary
-  #     responses:
-  #       201:
-  #         description: Music added successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         music:
-  #                           $ref: '#/components/schemas/Music'
-  #                     message:
-  #                       type: string
-  #                       example: Music added successfully
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /music/categories/{categoryId}/music:
+    post:
+      tags: [Music]
+      summary: Add music to category (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, audio]
+              properties:
+                title:
+                  type: string
+                genre:
+                  type: string
+                audio:
+                  type: string
+                  format: binary
+      responses:
+        201:
+          description: Music added successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          music:
+                            $ref: '#/components/schemas/Music'
+                      message:
+                        type: string
+                        example: Music added successfully
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /music/categories/{categoryId}/music:
-  #   get:
-  #     tags: [Music]
-  #     summary: Get music by category (public)
-  #     parameters:
-  #       - name: categoryId
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #       - name: includeInactive
-  #         in: query
-  #         schema:
-  #           type: boolean
-  #           default: false
-  #     responses:
-  #       200:
-  #         description: Music retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         musics:
-  #                           type: array
-  #                           items:
-  #                             $ref: '#/components/schemas/Music'
-  #                     message:
-  #                       type: string
-  #                       example: Music retrieved successfully
-  #       404:
-  #         description: Category not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       500:
-  #         description: Internal server error
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Category not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /music/categories/{categoryId}/music:
+    get:
+      tags: [Music]
+      summary: Get music by category (public)
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: includeInactive
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          description: Music retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          musics:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Music'
+                      message:
+                        type: string
+                        example: Music retrieved successfully
+        404:
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /music/categories/{categoryId}/music/bulk:
-  #   post:
-  #     tags: [Music]
-  #     summary: Bulk add music to category (Admin/Superadmin)
-  #     description: Upload multiple audio files as audios[]; optional payload can map indices to titles/genres
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: categoryId
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         multipart/form-data:
-  #           schema:
-  #             type: object
-  #             required: [audios]
-  #             properties:
-  #               audios:
-  #                 type: array
-  #                 items:
-  #                   type: string
-  #                   format: binary
-  #               payload:
-  #                 type: string
-  #                 description: JSON array mapping index to { title, genre }
-  #     responses:
-  #       201:
-  #         description: Bulk music uploaded successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         musics:
-  #                           type: array
-  #                           items:
-  #                             $ref: '#/components/schemas/Music'
-  #                     message:
-  #                       type: string
-  #                       example: Bulk music uploaded successfully
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Category not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /music/categories/{categoryId}/music/bulk:
+    post:
+      tags: [Music]
+      summary: Bulk add music to category (Admin/Superadmin)
+      description: Upload multiple audio files as audios[]; optional payload can map indices to titles/genres
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [audios]
+              properties:
+                audios:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                payload:
+                  type: string
+                  description: JSON array mapping index to { title, genre }
+      responses:
+        201:
+          description: Bulk music uploaded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          musics:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Music'
+                      message:
+                        type: string
+                        example: Bulk music uploaded successfully
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /music/music/{id}:
-  #   put:
-  #     tags: [Music]
-  #     summary: Update music (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: false
-  #       content:
-  #         multipart/form-data:
-  #           schema:
-  #             type: object
-  #             properties:
-  #               title:
-  #                 type: string
-  #               genre:
-  #                 type: string
-  #               audio:
-  #                 type: string
-  #                 format: binary
-  #     responses:
-  #       200:
-  #         description: Music updated successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         music:
-  #                           $ref: '#/components/schemas/Music'
-  #                     message:
-  #                       type: string
-  #                       example: Music updated successfully
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /music/music/{id}:
+    put:
+      tags: [Music]
+      summary: Update music (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                genre:
+                  type: string
+                audio:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Music updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          music:
+                            $ref: '#/components/schemas/Music'
+                      message:
+                        type: string
+                        example: Music updated successfully
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /music/music/{id}/status:
-  #   patch:
-  #     tags: [Music]
-  #     summary: Set music status (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             required: [isActive]
-  #             properties:
-  #               isActive:
-  #                 type: boolean
-  #     responses:
-  #       200:
-  #         description: Music status updated successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         music:
-  #                           $ref: '#/components/schemas/Music'
-  #                     message:
-  #                       type: string
-  #                       example: Music status updated successfully
-  #       400:
-  #         description: Validation error
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Music not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /music/music/{id}/status:
+    patch:
+      tags: [Music]
+      summary: Set music status (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive:
+                  type: boolean
+      responses:
+        200:
+          description: Music status updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          music:
+                            $ref: '#/components/schemas/Music'
+                      message:
+                        type: string
+                        example: Music status updated successfully
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Music not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   
 
   # /podcasts:
@@ -3609,8 +3609,8 @@ tags:
     description: Daily feeling submissions
   - name: Questionnaires
     description: Mental health assessments
-  # - name: Music
-  #   description: Music categories and tracks management
+  - name: Music
+    description: Music categories and tracks management
   # - name: Podcasts
   #   description: Podcast management
   # - name: Reels

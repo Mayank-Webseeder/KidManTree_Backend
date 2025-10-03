@@ -410,16 +410,53 @@ class AuthController {
   }
 
   // Forgot Password functionality
+  // async forgotPassword(req, res) {
+  //   try {
+  //     const { email } = req.body;
+
+  //     if (!email) {
+  //       return errorResponse(res, 'Email is required', 400);
+  //     }
+
+  //     const result = await authService.initiateForgotPassword(email);
+
+  //     return successResponse(res, result, result.message);
+  //   } catch (error) {
+  //     logger.error('Forgot password error:', error);
+  //     return errorResponse(res, error.message, 400);
+  //   }
+  // }
+
+  // async resetPassword(req, res) {
+  //   try {
+  //     const { resetToken, newPassword } = req.body;
+
+  //     if (!resetToken || !newPassword) {
+  //       return errorResponse(res, 'Reset token and new password are required', 400);
+  //     }
+
+  //     if (newPassword.length < 8) {
+  //       return errorResponse(res, 'Password must be at least 8 characters long', 400);
+  //     }
+
+  //     const result = await authService.resetPassword(resetToken, newPassword);
+
+  //     return successResponse(res, result, result.message);
+  //   } catch (error) {
+  //     logger.error('Reset password error:', error);
+  //     return errorResponse(res, error.message, 400);
+  //   }
+  // }
+
+  // Forgot Password (Send OTP)
   async forgotPassword(req, res) {
     try {
       const { email } = req.body;
-
       if (!email) {
         return errorResponse(res, 'Email is required', 400);
       }
 
-      const result = await authService.initiateForgotPassword(email);
-
+      const result = await authService.initiateForgotPasswordOTP(email);
       return successResponse(res, result, result.message);
     } catch (error) {
       logger.error('Forgot password error:', error);
@@ -427,26 +464,27 @@ class AuthController {
     }
   }
 
+  // Reset Password (with OTP + confirm password)
   async resetPassword(req, res) {
     try {
-      const { resetToken, newPassword } = req.body;
+      const { email, otp, newPassword, confirmPassword } = req.body;
 
-      if (!resetToken || !newPassword) {
-        return errorResponse(res, 'Reset token and new password are required', 400);
+      if (!email || !otp || !newPassword || !confirmPassword) {
+        return errorResponse(res, 'Email, OTP, new password and confirm password are required', 400);
       }
 
       if (newPassword.length < 8) {
         return errorResponse(res, 'Password must be at least 8 characters long', 400);
       }
 
-      const result = await authService.resetPassword(resetToken, newPassword);
-
+      const result = await authService.resetPasswordWithOTP(email, otp, newPassword, confirmPassword);
       return successResponse(res, result, result.message);
     } catch (error) {
       logger.error('Reset password error:', error);
       return errorResponse(res, error.message, 400);
     }
   }
+
 
   async changePassword(req, res) {
     try {
