@@ -2769,260 +2769,260 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   
 
-  # /podcasts:
-  #   get:
-  #     tags: [Podcasts]
-  #     summary: Get all podcasts (public)
-  #     responses:
-  #       200:
-  #         description: Podcasts retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         podcasts:
-  #                           type: array
-  #                           items:
-  #                             $ref: '#/components/schemas/Podcast'
-  #                     message:
-  #                       type: string
-  #                       example: Podcasts retrieved successfully
-  #       500:
-  #         description: Internal server error
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /podcasts:
+    get:
+      tags: [Podcasts]
+      summary: Get all podcasts (public)
+      responses:
+        200:
+          description: Podcasts retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          podcasts:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Podcast'
+                      message:
+                        type: string
+                        example: Podcasts retrieved successfully
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  #   post:
-  #     tags: [Podcasts]
-  #     summary: Create podcast (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         multipart/form-data:
-  #           schema:
-  #             type: object
-  #             required: [title, youtubeLink, thumbnail]
-  #             properties:
-  #               title:
-  #                 type: string
-  #               time:
-  #                 type: string
-  #               youtubeLink:
-  #                 type: string
-  #               thumbnail:
-  #                 type: string
-  #                 format: binary
-  #     responses:
-  #       201:
-  #         description: Podcast created successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         podcast:
-  #                           $ref: '#/components/schemas/Podcast'
-  #                     message:
-  #                       type: string
-  #                       example: Podcast created successfully
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Podcasts]
+      summary: Create podcast (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, youtubeLink, thumbnail]
+              properties:
+                title:
+                  type: string
+                time:
+                  type: string
+                youtubeLink:
+                  type: string
+                thumbnail:
+                  type: string
+                  format: binary
+      responses:
+        201:
+          description: Podcast created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          podcast:
+                            $ref: '#/components/schemas/Podcast'
+                      message:
+                        type: string
+                        example: Podcast created successfully
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /podcasts/admin:
-  #   get:
-  #     tags: [Podcasts]
-  #     summary: Admin list podcasts
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: includeInactive
-  #         in: query
-  #         schema:
-  #           type: boolean
-  #           default: false
-  #     responses:
-  #       200:
-  #         description: Podcasts retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /podcasts/admin:
+    get:
+      tags: [Podcasts]
+      summary: Admin list podcasts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: includeInactive
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          description: Podcasts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /podcasts/{id}:
-  #   put:
-  #     tags: [Podcasts]
-  #     summary: Update podcast (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: false
-  #       content:
-  #         multipart/form-data:
-  #           schema:
-  #             type: object
-  #             properties:
-  #               title:
-  #                 type: string
-  #               time:
-  #                 type: string
-  #               youtubeLink:
-  #                 type: string
-  #               thumbnail:
-  #                 type: string
-  #                 format: binary
-  #     responses:
-  #       200:
-  #         description: Podcast updated successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /podcasts/{id}:
+    put:
+      tags: [Podcasts]
+      summary: Update podcast (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                time:
+                  type: string
+                youtubeLink:
+                  type: string
+                thumbnail:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Podcast updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  #   delete:
-  #     tags: [Podcasts]
-  #     summary: Delete podcast (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Podcast deleted successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Podcasts]
+      summary: Delete podcast (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Podcast deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /podcasts/{id}/status:
-  #   patch:
-  #     tags: [Podcasts]
-  #     summary: Set podcast status (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             required: [isActive]
-  #             properties:
-  #               isActive:
-  #                 type: boolean
-  #     responses:
-  #       200:
-  #         description: Podcast status updated successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /podcasts/{id}/status:
+    patch:
+      tags: [Podcasts]
+      summary: Set podcast status (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive:
+                  type: boolean
+      responses:
+        200:
+          description: Podcast status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # /reels:
   #   get:
@@ -3258,60 +3258,60 @@ paths:
   #             schema:
   #               $ref: '#/components/schemas/ErrorResponse'
 
-  #   delete:
-  #     tags: [Music]
-  #     summary: Delete music (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Music deleted successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Music not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       401:
-  #         description: Unauthorized - Invalid or missing token
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden - Insufficient permissions (admin role required)
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       500:
-  #         description: Internal server error
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Music]
+      summary: Delete music (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Music deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Music not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Insufficient permissions (admin role required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /users/admin/list:
     get:
@@ -3611,7 +3611,7 @@ tags:
     description: Mental health assessments
   - name: Music
     description: Music categories and tracks management
-  # - name: Podcasts
-  #   description: Podcast management
+  - name: Podcasts
+    description: Podcast management
   # - name: Reels
   #   description: Reels categories and videos management
