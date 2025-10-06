@@ -173,6 +173,7 @@ const fs = require("fs");
 const Reel = require("../models/Reel");
 const { successResponse, errorResponse } = require("../utils/response");
 const logger = require("../utils/logger");
+const { getVideoUrl } = require("../utils/fileUrl");
 
 class ReelController {
   async createReel(req, res) {
@@ -181,14 +182,29 @@ class ReelController {
       if (!title) return errorResponse(res, "Title is required", 400);
       if (!req.file) return errorResponse(res, "Video is required", 400);
 
+      const relativePath = req.file.path
+        .replace(/\\/g, "/")
+        .replace(process.cwd(), "")
+        .replace(/^\//, "");
+
       const reel = await Reel.create({
         title,
         description,
-        videoPath: req.file.path.replace(/\\/g, "/"),
+        videoPath: relativePath,
         createdBy: req.user._id,
       });
 
-      return successResponse(res, { reel }, "Reel created successfully", 201);
+      const withUrl = {
+        ...reel.toObject(),
+        videoUrl: getVideoUrl(reel.videoPath),
+      };
+
+      return successResponse(
+        res,
+        { reel: withUrl },
+        "Reel created successfully",
+        201
+      );
     } catch (error) {
       logger.error("Create reel error:", error);
       return errorResponse(res, "Failed to create reel", 500);
@@ -204,7 +220,13 @@ class ReelController {
       if (title !== undefined) updates.title = title;
       if (description !== undefined) updates.description = description;
       if (isActive !== undefined) updates.isActive = isActive;
-      if (req.file) updates.videoPath = req.file.path.replace(/\\/g, "/");
+      if (req.file) {
+        const relativePath = req.file.path
+          .replace(/\\/g, "/")
+          .replace(process.cwd(), "")
+          .replace(/^\//, "");
+        updates.videoPath = relativePath;
+      }
 
       const reel = await Reel.findByIdAndUpdate(
         id,
@@ -213,7 +235,15 @@ class ReelController {
       );
 
       if (!reel) return errorResponse(res, "Reel not found", 404);
-      return successResponse(res, { reel }, "Reel updated successfully");
+      const withUrl = {
+        ...reel.toObject(),
+        videoUrl: getVideoUrl(reel.videoPath),
+      };
+      return successResponse(
+        res,
+        { reel: withUrl },
+        "Reel updated successfully"
+      );
     } catch (error) {
       logger.error("Update reel error:", error);
       return errorResponse(res, "Failed to update reel", 500);
@@ -242,7 +272,16 @@ class ReelController {
         .sort({ createdAt: -1 })
         .populate("createdBy", "name email");
 
-      return successResponse(res, { reels }, "Reels retrieved successfully");
+      const withUrls = reels.map((r) => ({
+        ...r.toObject(),
+        videoUrl: getVideoUrl(r.videoPath),
+      }));
+
+      return successResponse(
+        res,
+        { reels: withUrls },
+        "Reels retrieved successfully"
+      );
     } catch (error) {
       logger.error("List reels error:", error);
       return errorResponse(res, "Failed to retrieve reels", 500);

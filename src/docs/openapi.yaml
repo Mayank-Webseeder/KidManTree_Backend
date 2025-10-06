@@ -2592,7 +2592,8 @@ paths:
   /music/categories/{categoryId}/music:
     post:
       tags: [Music]
-      summary: Add music to category (Admin/Superadmin)
+      summary: Add music to category (external URL)
+      description: Provide an external `audioUrl` (e.g., SoundHelix) instead of uploading audio
       security:
         - BearerAuth: []
       parameters:
@@ -2604,18 +2605,19 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
-              required: [title, audio]
+              required: [title, audioUrl]
               properties:
                 title:
                   type: string
                 genre:
                   type: string
-                audio:
+                audioUrl:
                   type: string
-                  format: binary
+                  format: uri
+                  example: https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3
       responses:
         201:
           description: Music added successfully
@@ -2744,8 +2746,8 @@ paths:
   /music/categories/{categoryId}/music/bulk:
     post:
       tags: [Music]
-      summary: Bulk add music to category (Admin/Superadmin)
-      description: Upload multiple audio files as audios[]; optional payload can map indices to titles/genres
+      summary: Bulk add music via external URLs (Admin/Superadmin)
+      description: Send payload array of items with title, optional genre, and audioUrl
       security:
         - BearerAuth: []
       parameters:
@@ -2757,19 +2759,25 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
-              required: [audios]
+              required: [payload]
               properties:
-                audios:
+                payload:
                   type: array
                   items:
-                    type: string
-                    format: binary
-                payload:
-                  type: string
-                  description: JSON array mapping index to { title, genre }
+                    type: object
+                    required: [title, audioUrl]
+                    properties:
+                      title:
+                        type: string
+                      genre:
+                        type: string
+                      audioUrl:
+                        type: string
+                        format: uri
+                        example: https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3
       responses:
         201:
           description: Bulk music uploaded successfully

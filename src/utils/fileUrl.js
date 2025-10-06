@@ -7,6 +7,8 @@ const path = require("path");
  */
 const getFileUrl = (filePath) => {
   if (!filePath) return null;
+  // If already an absolute URL, return as-is
+  if (/^https?:\/\//i.test(filePath)) return filePath;
 
   // Remove leading slash if present
   const cleanPath = filePath.startsWith("/") ? filePath.slice(1) : filePath;

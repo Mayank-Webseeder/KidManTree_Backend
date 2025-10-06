@@ -394,30 +394,25 @@ class MusicController {
   async addMusic(req, res) {
     try {
       const { categoryId } = req.params;
-      const { title, genre } = req.body;
+      const { title, genre, audioUrl } = req.body;
       if (!title) return errorResponse(res, "Music title is required", 400);
-      if (!req.file) return errorResponse(res, "Audio file is required", 400);
+      if (!audioUrl)
+        return errorResponse(res, "audioUrl is required (external URL)", 400);
 
       const category = await MusicCategory.findById(categoryId);
       if (!category) return errorResponse(res, "Category not found", 404);
-
-      // Store relative path instead of absolute path
-      const relativePath = req.file.path
-        .replace(/\\/g, "/")
-        .replace(process.cwd(), "")
-        .replace(/^\//, "");
 
       const track = await Music.create({
         category: categoryId,
         title,
         genre,
-        audioPath: relativePath,
+        audioPath: audioUrl,
       });
 
       // Add audioUrl to response
       const trackWithUrl = {
         ...track.toObject(),
-        audioUrl: getAudioUrl(relativePath),
+        audioUrl: getAudioUrl(track.audioPath),
       };
 
       return successResponse(
@@ -440,25 +435,25 @@ class MusicController {
       const category = await MusicCategory.findById(categoryId);
       if (!category) return errorResponse(res, "Category not found", 404);
 
-      if (!req.files || req.files.length === 0) {
-        return errorResponse(res, "No audio files uploaded", 400);
+      if (!payload || !Array.isArray(payload) || payload.length === 0) {
+        return errorResponse(
+          res,
+          "payload array of { title, genre, audioUrl } is required",
+          400
+        );
       }
 
       const tracks = await Promise.all(
-        req.files.map((file, idx) => {
-          const title =
-            payload?.[idx]?.title || path.parse(file.originalname).name;
-          const genre = payload?.[idx]?.genre;
-          // Store relative path instead of absolute path
-          const relativePath = file.path
-            .replace(/\\/g, "/")
-            .replace(process.cwd(), "")
-            .replace(/^\//, "");
+        payload.map((item) => {
+          const title = item?.title;
+          const genre = item?.genre;
+          const audioUrl = item?.audioUrl;
+          if (!title || !audioUrl) return null;
           return Music.create({
             category: categoryId,
             title,
             genre,
-            audioPath: relativePath,
+            audioPath: audioUrl,
           });
         })
       );
