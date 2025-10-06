@@ -526,6 +526,99 @@ components:
           type: string
           format: date-time
 
+        Support:
+      type: object
+      properties:
+        _id:
+          type: string
+        subject:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, inprogress, resolved]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        createdBy:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/User'
+        assignedTo:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/User'
+        resolvedAt:
+          type: string
+          format: date-time
+        resolvedBy:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/User'
+        adminNotes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+      Poll:
+      type: object
+      properties:
+        _id:
+          type: string
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                type: string
+              votes:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    user:
+                      oneOf:
+                        - type: string
+                        - $ref: '#/components/schemas/User'
+                    createdAt:
+                      type: string
+                      format: date-time
+              voteCount:
+                type: integer
+              percentage:
+                type: string
+        creator:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/User'
+        expiresAt:
+          type: string
+          format: date-time
+        isActive:
+          type: boolean
+        isDeleted:
+          type: boolean
+        visibility:
+          type: string
+          enum: [public, private]
+        totalVotes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+
 paths:
   /auth/signup:
     post:
@@ -1067,8 +1160,8 @@ paths:
   /auth/forgot-password:
     post:
       tags: [Auth]
-      summary: Initiate password reset
-      description: Send password reset instructions to user's email address
+      summary: Initiate password reset with OTP
+      description: Send OTP to user's email address for password reset
       requestBody:
         required: true
         content:
@@ -1083,7 +1176,7 @@ paths:
                   example: "user@example.com"
       responses:
         200:
-          description: Password reset instructions sent successfully
+          description: OTP sent successfully
           content:
             application/json:
               schema:
@@ -1099,10 +1192,10 @@ paths:
                             example: true
                           message:
                             type: string
-                            example: "Password reset instructions sent to your email address"
+                            example: "OTP has been sent to your email address"
                       message:
                         type: string
-                        example: "Password reset instructions sent to your email address"
+                        example: "OTP has been sent to your email address"
         400:
           description: Invalid request or user not found
           content:
@@ -1113,20 +1206,29 @@ paths:
   /auth/reset-password:
     post:
       tags: [Auth]
-      summary: Reset password using token
-      description: Reset user password using the token received via email
+      summary: Reset password using OTP
+      description: Reset user password using OTP received via email
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [resetToken, newPassword]
+              required: [email, otp, newPassword, confirmPassword]
               properties:
-                resetToken:
+                email:
                   type: string
-                  example: "550e8400-e29b-41d4-a716-446655440000"
+                  format: email
+                  example: "user@example.com"
+                otp:
+                  type: string
+                  example: "123456"
                 newPassword:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "NewSecurePassword123!"
+                confirmPassword:
                   type: string
                   format: password
                   minLength: 8
@@ -1154,7 +1256,7 @@ paths:
                         type: string
                         example: "Password has been reset successfully"
         400:
-          description: Invalid or expired reset token
+          description: Invalid OTP, expired OTP, password mismatch, or validation error
           content:
             application/json:
               schema:
@@ -1908,6 +2010,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+
+# ----------------------------------------------------- Feelings api endpoints -----------------------------------------------------
+
+
+
   /feelings/today:
     post:
       tags: [Feelings]
@@ -2054,6 +2161,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+
+
+# ----------------------------------------------------- Questionnaires api endpoints -----------------------------------------------------
+
 
   /questionnaires/current:
     get:
@@ -2281,6 +2393,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+
+
+# ----------------------------------------------------- Music api endpoints -----------------------------------------------------
+
 
   /music/categories:
     get:
@@ -2524,7 +2641,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /music/categories/{categoryId}/music:
+    /music/categories/{categoryId}/music:
     get:
       tags: [Music]
       summary: Get music by category (public)
@@ -2571,18 +2688,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        403:
-          description: Forbidden
+
+    post:
+      tags: [Music]
+      summary: Add music to category (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, audio]
+              properties:
+                title:
+                  type: string
+                genre:
+                  type: string
+                audio:
+                  type: string
+                  format: binary
+      responses:
+        201:
+          description: Music added successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          music:
+                            $ref: '#/components/schemas/Music'
+                      message:
+                        type: string
+                        example: Music added successfully
+        401:
+          description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        404:
-          description: Category not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+
 
   /music/categories/{categoryId}/music/bulk:
     post:
@@ -2703,6 +2860,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+    delete:
+      tags: [Music]
+      summary: Delete music (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Music deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Music not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /music/music/{id}/status:
     patch:
       tags: [Music]
@@ -2767,7 +2961,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  
+
+
+
+# ----------------------------------------------------- Podcasts api endpoints -----------------------------------------------------
+
 
   /podcasts:
     get:
@@ -3024,243 +3222,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  # /reels:
-  #   get:
-  #     tags: [Reels]
-  #     summary: Get all reels (public)
-  #     responses:
-  #       200:
-  #         description: Reels retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
+  /reels:
+    get:
+      tags: [Reels]
+      summary: Get all reels (public)
+      responses:
+        200:
+          description: Reels retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
 
-  # /reels/categories/{categoryId}:
-  #   get:
-  #     tags: [Reels]
-  #     summary: Get reels by category (public)
-  #     parameters:
-  #       - name: categoryId
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Reels retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
+    post:
+      tags: [Reels]
+      summary: Create reel (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, video]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                video:
+                  type: string
+                  format: binary
+      responses:
+        201:
+          description: Reel created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
 
-  # /reels/{id}/like:
-  #   post:
-  #     tags: [Reels]
-  #     summary: Like a reel (authenticated)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Reel liked
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
 
-  # /reels/categories:
-  #   post:
-  #     tags: [Reels]
-  #     summary: Create reel category (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             required: [name]
-  #             properties:
-  #               name:
-  #                 type: string
-  #     responses:
-  #       201:
-  #         description: Reel category created successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
 
-  # /reels/categories/{id}:
-  #   put:
-  #     tags: [Reels]
-  #     summary: Update reel category (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: false
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             properties:
-  #               name:
-  #                 type: string
-  #               isActive:
-  #                 type: boolean
-  #     responses:
-  #       200:
-  #         description: Reel category updated successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
-  #   delete:
-  #     tags: [Reels]
-  #     summary: Delete reel category (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Reel category deleted successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-
-  # /reels/categories/{categoryId}/reels:
-  #   post:
-  #     tags: [Reels]
-  #     summary: Create reel (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: categoryId
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         multipart/form-data:
-  #           schema:
-  #             type: object
-  #             required: [title, video]
-  #             properties:
-  #               title:
-  #                 type: string
-  #               description:
-  #                 type: string
-  #               video:
-  #                 type: string
-  #                 format: binary
-  #     responses:
-  #       201:
-  #         description: Reel created successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
-
-  # /reels/reels/{id}:
-  #   put:
-  #     tags: [Reels]
-  #     summary: Update reel (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: false
-  #       content:
-  #         multipart/form-data:
-  #           schema:
-  #             type: object
-  #             properties:
-  #               title:
-  #                 type: string
-  #               description:
-  #                 type: string
-  #               video:
-  #                 type: string
-  #                 format: binary
-  #     responses:
-  #       200:
-  #         description: Reel updated successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
-  #   delete:
-  #     tags: [Reels]
-  #     summary: Delete reel (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Reel deleted successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
-  #       403:
-  #         description: Forbidden
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Music not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-
-    delete:
-      tags: [Music]
-      summary: Delete music (Admin/Superadmin)
+  /reels/{id}/like:
+    post:
+      tags: [Reels]
+      summary: Like a reel (authenticated)
       security:
         - BearerAuth: []
       parameters:
@@ -3271,7 +3278,47 @@ paths:
             type: string
       responses:
         200:
-          description: Music deleted successfully
+          description: Reel liked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reels/{id}:
+    put:
+      tags: [Reels]
+      summary: Update reel (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                video:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Reel updated successfully
           content:
             application/json:
               schema:
@@ -3289,29 +3336,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         404:
-          description: Music not found
+          description: Not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        401:
-          description: Unauthorized - Invalid or missing token
+
+    delete:
+      tags: [Reels]
+      summary: Delete reel (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Reel deleted successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiResponse'
         403:
-          description: Forbidden - Insufficient permissions (admin role required)
+          description: Forbidden
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        500:
-          description: Internal server error
+        404:
+          description: Not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+# ----------------------------------------------------- Users api endpoints -----------------------------------------------------
+
 
   /users/admin/list:
     get:
@@ -3596,6 +3666,1199 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+
+
+# ----------------------------------------------------- Support api endpoints -----------------------------------------------------
+
+
+  # /support:
+  #   post:
+  #     tags: [Support]
+  #     summary: Create support ticket
+  #     description: Create a new support ticket for any authenticated user
+  #     security:
+  #       - BearerAuth: []
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required: [subject, description]
+  #             properties:
+  #               subject:
+  #                 type: string
+  #                 maxLength: 200
+  #                 example: "Login Issue"
+  #               description:
+  #                 type: string
+  #                 maxLength: 2000
+  #                 example: "I am unable to login to my account"
+  #               priority:
+  #                 type: string
+  #                 enum: [low, medium, high, urgent]
+  #                 default: medium
+  #                 example: "medium"
+  #     responses:
+  #       201:
+  #         description: Support ticket created successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         support:
+  #                           $ref: '#/components/schemas/Support'
+  #                     message:
+  #                       type: string
+  #                       example: "Support ticket created successfully"
+  #       400:
+  #         description: Validation error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /support/my-tickets:
+  #   get:
+  #     tags: [Support]
+  #     summary: Get my support tickets
+  #     description: Retrieve support tickets created by the authenticated user
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: status
+  #         in: query
+  #         schema:
+  #           type: string
+  #           enum: [open, inprogress, resolved]
+  #       - name: page
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 1
+  #           minimum: 1
+  #       - name: limit
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 10
+  #           minimum: 1
+  #           maximum: 50
+  #     responses:
+  #       200:
+  #         description: Support tickets retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         supports:
+  #                           type: array
+  #                           items:
+  #                             $ref: '#/components/schemas/Support'
+  #                         pagination:
+  #                           type: object
+  #                           properties:
+  #                             current:
+  #                               type: integer
+  #                             total:
+  #                               type: integer
+  #                             count:
+  #                               type: integer
+  #                     message:
+  #                       type: string
+  #                       example: "Support tickets retrieved successfully"
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /support/{id}:
+  #   get:
+  #     tags: [Support]
+  #     summary: Get support ticket by ID
+  #     description: Get a specific support ticket (users can only see their own tickets)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Support ticket retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         support:
+  #                           $ref: '#/components/schemas/Support'
+  #                     message:
+  #                       type: string
+  #                       example: "Support ticket retrieved successfully"
+  #       403:
+  #         description: Access denied
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Support ticket not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   put:
+  #     tags: [Support]
+  #     summary: Update my support ticket
+  #     description: Update own support ticket (users can only update their own tickets)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               subject:
+  #                 type: string
+  #                 maxLength: 200
+  #               description:
+  #                 type: string
+  #                 maxLength: 2000
+  #               priority:
+  #                 type: string
+  #                 enum: [low, medium, high, urgent]
+  #     responses:
+  #       200:
+  #         description: Support ticket updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         support:
+  #                           $ref: '#/components/schemas/Support'
+  #                     message:
+  #                       type: string
+  #                       example: "Support ticket updated successfully"
+  #       400:
+  #         description: Cannot update resolved tickets
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Access denied
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Support ticket not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   delete:
+  #     tags: [Support]
+  #     summary: Delete my support ticket
+  #     description: Delete own support ticket (users can only delete their own tickets)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Support ticket deleted successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     message:
+  #                       type: string
+  #                       example: "Support ticket deleted successfully"
+  #       403:
+  #         description: Access denied
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Support ticket not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /support/admin/all:
+  #   get:
+  #     tags: [Support]
+  #     summary: Get all support tickets (Admin/Superadmin)
+  #     description: Retrieve all support tickets with filtering options for admins
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: status
+  #         in: query
+  #         schema:
+  #           type: string
+  #           enum: [open, inprogress, resolved]
+  #       - name: priority
+  #         in: query
+  #         schema:
+  #           type: string
+  #           enum: [low, medium, high, urgent]
+  #       - name: assignedTo
+  #         in: query
+  #         schema:
+  #           type: string
+  #       - name: page
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 1
+  #           minimum: 1
+  #       - name: limit
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 10
+  #           minimum: 1
+  #           maximum: 50
+  #     responses:
+  #       200:
+  #         description: Support tickets retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         supports:
+  #                           type: array
+  #                           items:
+  #                             $ref: '#/components/schemas/Support'
+  #                         pagination:
+  #                           type: object
+  #                           properties:
+  #                             current:
+  #                               type: integer
+  #                             total:
+  #                               type: integer
+  #                             count:
+  #                               type: integer
+  #                     message:
+  #                       type: string
+  #                       example: "Support tickets retrieved successfully"
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Admin or Superadmin role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /support/{id}/status:
+  #   patch:
+  #     tags: [Support]
+  #     summary: Update support ticket status (Admin/Superadmin)
+  #     description: Update support ticket status and add admin notes
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required: [status]
+  #             properties:
+  #               status:
+  #                 type: string
+  #                 enum: [open, inprogress, resolved]
+  #               adminNotes:
+  #                 type: string
+  #                 maxLength: 1000
+  #     responses:
+  #       200:
+  #         description: Support status updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         support:
+  #                           $ref: '#/components/schemas/Support'
+  #                     message:
+  #                       type: string
+  #                       example: "Support status updated successfully"
+  #       404:
+  #         description: Support ticket not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Admin or Superadmin role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /support/{id}/assign:
+  #   patch:
+  #     tags: [Support]
+  #     summary: Assign support ticket (Admin/Superadmin)
+  #     description: Assign support ticket to a specific user
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               assignedTo:
+  #                 type: string
+  #                 description: User ID to assign ticket to (null to unassign)
+  #     responses:
+  #       200:
+  #         description: Support ticket assigned successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         support:
+  #                           $ref: '#/components/schemas/Support'
+  #                     message:
+  #                       type: string
+  #                       example: "Support ticket assigned successfully"
+  #       404:
+  #         description: Support ticket not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Admin or Superadmin role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /support/{id}/admin-update:
+  #   put:
+  #     tags: [Support]
+  #     summary: Admin update support ticket
+  #     description: Admin can update any support ticket with full permissions
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               subject:
+  #                 type: string
+  #                 maxLength: 200
+  #               description:
+  #                 type: string
+  #                 maxLength: 2000
+  #               priority:
+  #                 type: string
+  #                 enum: [low, medium, high, urgent]
+  #               status:
+  #                 type: string
+  #                 enum: [open, inprogress, resolved]
+  #               adminNotes:
+  #                 type: string
+  #                 maxLength: 1000
+  #               assignedTo:
+  #                 type: string
+  #     responses:
+  #       200:
+  #         description: Support ticket updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         support:
+  #                           $ref: '#/components/schemas/Support'
+  #                     message:
+  #                       type: string
+  #                       example: "Support ticket updated successfully"
+  #       404:
+  #         description: Support ticket not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Admin or Superadmin role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /support/{id}/admin-delete:
+  #   delete:
+  #     tags: [Support]
+  #     summary: Admin delete support ticket
+  #     description: Admin can delete any support ticket
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Support ticket deleted successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     message:
+  #                       type: string
+  #                       example: "Support ticket deleted successfully"
+  #       404:
+  #         description: Support ticket not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Admin or Superadmin role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /support/admin/stats:
+  #   get:
+  #     tags: [Support]
+  #     summary: Get support statistics (Admin/Superadmin)
+  #     description: Get support ticket statistics and metrics for dashboard
+  #     security:
+  #       - BearerAuth: []
+  #     responses:
+  #       200:
+  #         description: Support statistics retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         totalTickets:
+  #                           type: integer
+  #                         resolvedTickets:
+  #                           type: integer
+  #                         openTickets:
+  #                           type: integer
+  #                         inProgressTickets:
+  #                           type: integer
+  #                         statusBreakdown:
+  #                           type: array
+  #                           items:
+  #                             type: object
+  #                             properties:
+  #                               _id:
+  #                                 type: string
+  #                               count:
+  #                                 type: integer
+  #                         priorityBreakdown:
+  #                           type: array
+  #                           items:
+  #                             type: object
+  #                             properties:
+  #                               _id:
+  #                                 type: string
+  #                               count:
+  #                                 type: integer
+  #                     message:
+  #                       type: string
+  #                       example: "Support statistics retrieved successfully"
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Admin or Superadmin role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+
+
+
+# ----------------------------------------------------- polls api endpoints -----------------------------------------------------
+
+
+
+  # /poll:
+  #   get:
+  #     tags: [Poll]
+  #     summary: Get all public polls
+  #     parameters:
+  #       - name: page
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 1
+  #       - name: limit
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 10
+  #       - name: visibility
+  #         in: query
+  #         schema:
+  #           type: string
+  #           enum: [public, private]
+  #           default: public
+  #     responses:
+  #       200:
+  #         description: Polls retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         polls:
+  #                           type: array
+  #                           items:
+  #                             $ref: '#/components/schemas/Poll'
+  #                         pagination:
+  #                           type: object
+  #                           properties:
+  #                             current:
+  #                               type: integer
+  #                             total:
+  #                               type: integer
+  #                             count:
+  #                               type: integer
+
+  #   post:
+  #     tags: [Poll]
+  #     summary: Create new poll (never expires)
+  #     security:
+  #       - BearerAuth: []
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required: [question, options]
+  #             properties:
+  #               question:
+  #                 type: string
+  #                 maxLength: 300
+  #                 example: "What is your favorite programming language?"
+  #               options:
+  #                 type: array
+  #                 minItems: 2
+  #                 maxItems: 10
+  #                 items:
+  #                   type: string
+  #                   maxLength: 100
+  #                 example: ["JavaScript", "Python", "Java", "C++"]
+  #               visibility:
+  #                 type: string
+  #                 enum: [public, private]
+  #                 default: public
+  #     responses:
+  #       201:
+  #         description: Poll created successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         poll:
+  #                           $ref: '#/components/schemas/Poll'
+  #       400:
+  #         description: Validation error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /poll/{id}:
+  #   get:
+  #     tags: [Poll]
+  #     summary: Get poll by ID
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Poll retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         poll:
+  #                           $ref: '#/components/schemas/Poll'
+  #       404:
+  #         description: Poll not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   put:
+  #     tags: [Poll]
+  #     summary: Update my poll
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               question:
+  #                 type: string
+  #                 maxLength: 300
+  #               options:
+  #                 type: array
+  #                 minItems: 2
+  #                 maxItems: 10
+  #                 items:
+  #                   type: string
+  #               visibility:
+  #                 type: string
+  #                 enum: [public, private]
+  #               isActive:
+  #                 type: boolean
+  #     responses:
+  #       200:
+  #         description: Poll updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         poll:
+  #                           $ref: '#/components/schemas/Poll'
+  #       400:
+  #         description: Cannot modify question or options after votes are cast
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Access denied
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Poll not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   delete:
+  #     tags: [Poll]
+  #     summary: Delete my poll
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Poll deleted successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+  #       403:
+  #         description: Access denied
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Poll not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /poll/my/polls:
+  #   get:
+  #     tags: [Poll]
+  #     summary: Get my polls
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: page
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 1
+  #       - name: limit
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 10
+  #     responses:
+  #       200:
+  #         description: My polls retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         polls:
+  #                           type: array
+  #                           items:
+  #                             $ref: '#/components/schemas/Poll'
+  #                         pagination:
+  #                           type: object
+  #                           properties:
+  #                             current:
+  #                               type: integer
+  #                             total:
+  #                               type: integer
+  #                             count:
+  #                               type: integer
+
+  # /poll/{id}/vote:
+  #   post:
+  #     tags: [Poll]
+  #     summary: Vote on poll (polls never expire)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required: [optionIndex]
+  #             properties:
+  #               optionIndex:
+  #                 type: integer
+  #                 minimum: 0
+  #                 example: 0
+  #                 description: "Array index of the option (0 for first option, 1 for second, etc.)"
+  #     responses:
+  #       200:
+  #         description: Vote recorded successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         poll:
+  #                           $ref: '#/components/schemas/Poll'
+  #       400:
+  #         description: Invalid option index or user already voted
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Poll not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  #   delete:
+  #     tags: [Poll]
+  #     summary: Remove vote from poll
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Vote removed successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         poll:
+  #                           $ref: '#/components/schemas/Poll'
+  #       400:
+  #         description: No vote found to remove
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Poll not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /poll/admin/all:
+  #   get:
+  #     tags: [Poll]
+  #     summary: Get all polls (Admin/Superadmin)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: page
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 1
+  #       - name: limit
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 10
+  #       - name: includeDeleted
+  #         in: query
+  #         schema:
+  #           type: boolean
+  #           default: false
+  #     responses:
+  #       200:
+  #         description: Admin polls retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         polls:
+  #                           type: array
+  #                           items:
+  #                             $ref: '#/components/schemas/Poll'
+  #                         pagination:
+  #                           type: object
+  #                           properties:
+  #                             current:
+  #                               type: integer
+  #                             total:
+  #                               type: integer
+  #                             count:
+  #                               type: integer
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Admin or Superadmin role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /poll/{id}/admin-update:
+  #   put:
+  #     tags: [Poll]
+  #     summary: Admin update poll (full control)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               question:
+  #                 type: string
+  #                 maxLength: 300
+  #               options:
+  #                 type: array
+  #                 minItems: 2
+  #                 maxItems: 10
+  #                 items:
+  #                   type: string
+  #               isActive:
+  #                 type: boolean
+  #               isDeleted:
+  #                 type: boolean
+  #               visibility:
+  #                 type: string
+  #                 enum: [public, private]
+  #     responses:
+  #       200:
+  #         description: Poll updated successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         poll:
+  #                           $ref: '#/components/schemas/Poll'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Admin or Superadmin role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Poll not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /poll/{id}/admin-delete:
+  #   delete:
+  #     tags: [Poll]
+  #     summary: Admin delete poll (any poll)
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: Poll deleted successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ApiResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       403:
+  #         description: Forbidden - Admin or Superadmin role required
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       404:
+  #         description: Poll not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+
 tags:
   - name: Auth
     description: Authentication and authorization
@@ -3613,5 +4876,9 @@ tags:
     description: Music categories and tracks management
   - name: Podcasts
     description: Podcast management
-  # - name: Reels
-  #   description: Reels categories and videos management
+  - name: Reels
+    description: Reels categories and videos management
+  # - name: Support
+  #   description: Support ticket management system
+  # - name: Poll
+  #   description: Poll management system for voting and surveys

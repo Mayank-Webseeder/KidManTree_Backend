@@ -1,44 +1,82 @@
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
 
-const reelSchema = new mongoose.Schema({
-    category: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'ReelCategory',
-        required: true,
-        index: true
-    },
+// const reelSchema = new mongoose.Schema({
+//     category: {
+//         type: mongoose.Schema.Types.ObjectId,
+//         ref: 'ReelCategory',
+//         required: true,
+//         index: true
+//     },
+//     title: {
+//         type: String,
+//         required: true,
+//         trim: true,
+//         maxlength: 150
+//     },
+//     description: {
+//         type: String,
+//         trim: true,
+//         maxlength: 500
+//     },
+//     videoPath: {
+//         type: String,
+//         required: true
+//     },
+//     likes: {
+//         type: Number,
+//         default: 0
+//     },
+//     isActive: {
+//         type: Boolean,
+//         default: true
+//     },
+//     createdBy: {
+//         type: mongoose.Schema.Types.ObjectId,
+//         ref: 'User',
+//         required: true
+//     }
+// }, {
+//     timestamps: true
+// });
+
+// module.exports = mongoose.model('Reel', reelSchema);
+
+const mongoose = require("mongoose");
+
+const reelSchema = new mongoose.Schema(
+  {
     title: {
-        type: String,
-        required: true,
-        trim: true,
-        maxlength: 150
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 150,
     },
     description: {
-        type: String,
-        trim: true,
-        maxlength: 500
+      type: String,
+      trim: true,
+      maxlength: 500,
     },
     videoPath: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
     likes: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0,
     },
     isActive: {
-        type: Boolean,
-        default: true
+      type: Boolean,
+      default: true,
     },
     createdBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    }
-}, {
-    timestamps: true
-});
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-module.exports = mongoose.model('Reel', reelSchema);
-
-
+module.exports = mongoose.model("Reel", reelSchema);

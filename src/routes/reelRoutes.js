@@ -33,48 +33,27 @@ const uploadVideo = multer({
   limits: { fileSize: 200 * 1024 * 1024 },
 });
 
-// Public
+// Public routes
 router.get("/", reelController.listReels);
-router.get("/categories/:categoryId", reelController.listByCategory);
 router.post("/:id/like", authenticate, reelController.likeReel);
-
-// Admin/Superadmin - categories
-router.post(
-  "/categories",
-  authenticate,
-  authorize("admin", "superadmin"),
-  reelController.createCategory
-);
-router.put(
-  "/categories/:id",
-  authenticate,
-  authorize("admin", "superadmin"),
-  reelController.updateCategory
-);
-router.delete(
-  "/categories/:id",
-  authenticate,
-  authorize("admin", "superadmin"),
-  reelController.deleteCategory
-);
 
 // Admin/Superadmin - reels
 router.post(
-  "/categories/:categoryId/reels",
+  "/",
   authenticate,
   authorize("admin", "superadmin"),
   uploadVideo.single("video"),
   reelController.createReel
 );
 router.put(
-  "/reels/:id",
+  "/:id",
   authenticate,
   authorize("admin", "superadmin"),
   uploadVideo.single("video"),
   reelController.updateReel
 );
 router.delete(
-  "/reels/:id",
+  "/:id",
   authenticate,
   authorize("admin", "superadmin"),
   reelController.deleteReel

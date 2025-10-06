@@ -27,22 +27,26 @@ A comprehensive Node.js + Express backend API for a mental health and content pl
 ## 📦 Installation
 
 1. **Clone and setup**:
+
    ```bash
    npm install
    ```
 
 2. **Environment configuration**:
+
    ```bash
    cp .env.example .env
    ```
-   
+
    Update the `.env` file with your actual values:
+
    - MongoDB connection string
    - Email service credentials
    - JWT secret key
    - SMS provider settings (Twilio or mock)
 
 3. **Initialize admin user**:
+
    ```bash
    npm run seed:admin
    ```
@@ -60,23 +64,27 @@ Interactive API documentation is available at: `http://localhost:8000/docs`
 ### Core Endpoints
 
 **Authentication**:
+
 - `POST /api/auth/signup` - Register new user
 - `POST /api/auth/login` - User login
 - `POST /api/auth/verify-contact-otp` - Verify phone OTP
 - `POST /api/auth/verify-email-otp` - Verify email OTP
 
 **User Management**:
+
 - `GET /api/users/profile` - Get user profile
 - `PUT /api/users/profile` - Update profile
 - `POST /api/users/change-password` - Change password
 
 **Mental Health**:
+
 - `POST /api/moods/log` - Log mood entry
 - `GET /api/moods/history` - Get mood history
 - `POST /api/feelings/today` - Submit daily feeling
 - `GET /api/analytics/mood` - Get mood analytics
 
 **Social Features**:
+
 - `GET /api/posts` - Browse posts
 - `POST /api/posts` - Create post
 - `POST /api/posts/:id/like` - Like/unlike post
@@ -84,16 +92,19 @@ Interactive API documentation is available at: `http://localhost:8000/docs`
 - `POST /api/polls/:id/vote` - Vote on poll
 
 **Professional Services**:
+
 - `GET /api/psychologists` - Browse psychologists
 - `POST /api/appointments` - Book appointment
 - `GET /api/appointments/my` - Get user appointments
 
 **Content Library**:
+
 - `GET /api/content` - Browse content
 - `POST /api/content/:id/like` - Like content
 - `POST /api/content/:id/complete` - Mark as completed
 
 **AI Services**:
+
 - `POST /api/chatbot/chat` - Chat with AI therapist
 
 ## 🔐 Authentication
@@ -154,6 +165,7 @@ Authorization: Bearer <your-jwt-token>
 ## 🤖 AI Chatbot
 
 Extensible chatbot service with:
+
 - Rule-based response system (current)
 - Intent recognition and context awareness
 - Session management and history
@@ -181,7 +193,6 @@ Extensible chatbot service with:
   /services        # Business logic and external integrations
   /utils           # Utility functions and helpers
   /docs            # Swagger/OpenAPI documentation
-  /seed            # Database seeding scripts
 app.js             # Express application setup
 server.js          # Server initialization and startup
 ```
@@ -199,16 +210,19 @@ Key environment variables (see `.env.example`):
 ## 🧪 Development
 
 **Start development server**:
+
 ```bash
 npm run dev
 ```
 
 **Create admin user**:
+
 ```bash
-npm run seed:admin
+
 ```
 
 **Run tests**:
+
 ```bash
 npm test
 ```
@@ -220,7 +234,9 @@ All API responses follow a consistent format:
 ```json
 {
   "success": true,
-  "data": { /* response data */ },
+  "data": {
+    /* response data */
+  },
   "message": "Operation successful",
   "errors": null,
   "timestamp": "2025-01-27T10:30:00.000Z"
@@ -230,6 +246,7 @@ All API responses follow a consistent format:
 ## 🚀 Deployment
 
 The application is production-ready with:
+
 - Environment-based configuration
 - Comprehensive error handling
 - Security middleware
@@ -237,6 +254,7 @@ The application is production-ready with:
 - Health check endpoints
 
 For production deployment, ensure:
+
 - Set `NODE_ENV=production`
 - Configure production MongoDB cluster
 - Set strong JWT secrets
