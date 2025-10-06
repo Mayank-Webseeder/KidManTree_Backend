@@ -96,6 +96,34 @@ components:
           type: string
           format: date-time
 
+    Podcast:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        time:
+          type: string
+        youtubeLink:
+          type: string
+        thumbnailPath:
+          type: string
+        thumbnailUrl:
+          type: string
+        isActive:
+          type: boolean
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
     MoodLog:
       type: object
       properties:
@@ -3021,6 +3049,8 @@ paths:
               properties:
                 title:
                   type: string
+                description:
+                  type: string
                 time:
                   type: string
                 youtubeLink:
@@ -3111,6 +3141,8 @@ paths:
               type: object
               properties:
                 title:
+                  type: string
+                description:
                   type: string
                 time:
                   type: string

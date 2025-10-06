@@ -6,7 +6,7 @@ const { getFileUrl } = require("../utils/fileUrl");
 class PodcastController {
   async create(req, res) {
     try {
-      const { title, time, youtubeLink } = req.body;
+      const { title, time, youtubeLink, description } = req.body;
       if (!title || !youtubeLink)
         return errorResponse(res, "title and youtubeLink are required", 400);
       if (!req.file) return errorResponse(res, "thumbnail is required", 400);
@@ -19,6 +19,7 @@ class PodcastController {
       const podcast = await Podcast.create({
         title,
         time,
+        description,
         youtubeLink,
         thumbnailPath: relativePath,
         createdBy: req.user._id,
@@ -80,10 +81,11 @@ class PodcastController {
     try {
       const { id } = req.params;
       const updates = {};
-      const { title, time, youtubeLink } = req.body;
+      const { title, time, youtubeLink, description } = req.body;
       if (title !== undefined) updates.title = title;
       if (time !== undefined) updates.time = time;
       if (youtubeLink !== undefined) updates.youtubeLink = youtubeLink;
+      if (description !== undefined) updates.description = description;
       if (req.file) {
         const relativePath = req.file.path
           .replace(/\\/g, "/")
