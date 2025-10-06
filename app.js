@@ -22,27 +22,29 @@ app.use(helmet());
 // }));
 
 const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://app.manmitr.com',
-  'http://manmitr.com',
-  'http://localhost:8000',
-  'https://api.manmitr.com',
-  'https://kidmantree-backend-g2la.onrender.com',
-  'https://manmitr.onrender.com',
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://app.manmitr.com",
+  "http://manmitr.com",
+  "http://localhost:8000",
+  "https://api.manmitr.com",
+  "https://kidmantree-backend-g2la.onrender.com",
+  "https://manmitr.onrender.com",
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
 
 // Rate limiting
 const limiter = rateLimit({
@@ -67,6 +69,9 @@ app.use(
     },
   })
 );
+
+// Static file serving for uploads
+app.use("/uploads", express.static("uploads"));
 
 // API routes
 app.use("/api", routes);
