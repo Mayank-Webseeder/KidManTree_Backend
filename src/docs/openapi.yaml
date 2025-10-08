@@ -4368,535 +4368,535 @@ paths:
 
 
 
-  # /poll:
-  #   get:
-  #     tags: [Poll]
-  #     summary: Get all public polls
-  #     parameters:
-  #       - name: page
-  #         in: query
-  #         schema:
-  #           type: integer
-  #           default: 1
-  #       - name: limit
-  #         in: query
-  #         schema:
-  #           type: integer
-  #           default: 10
-  #       - name: visibility
-  #         in: query
-  #         schema:
-  #           type: string
-  #           enum: [public, private]
-  #           default: public
-  #     responses:
-  #       200:
-  #         description: Polls retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         polls:
-  #                           type: array
-  #                           items:
-  #                             $ref: '#/components/schemas/Poll'
-  #                         pagination:
-  #                           type: object
-  #                           properties:
-  #                             current:
-  #                               type: integer
-  #                             total:
-  #                               type: integer
-  #                             count:
-  #                               type: integer
+  /poll:
+    get:
+      tags: [Poll]
+      summary: Get all public polls
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: visibility
+          in: query
+          schema:
+            type: string
+            enum: [public, private]
+            default: public
+      responses:
+        200:
+          description: Polls retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          polls:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Poll'
+                          pagination:
+                            type: object
+                            properties:
+                              current:
+                                type: integer
+                              total:
+                                type: integer
+                              count:
+                                type: integer
 
-  #   post:
-  #     tags: [Poll]
-  #     summary: Create new poll (never expires)
-  #     security:
-  #       - BearerAuth: []
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             required: [question, options]
-  #             properties:
-  #               question:
-  #                 type: string
-  #                 maxLength: 300
-  #                 example: "What is your favorite programming language?"
-  #               options:
-  #                 type: array
-  #                 minItems: 2
-  #                 maxItems: 10
-  #                 items:
-  #                   type: string
-  #                   maxLength: 100
-  #                 example: ["JavaScript", "Python", "Java", "C++"]
-  #               visibility:
-  #                 type: string
-  #                 enum: [public, private]
-  #                 default: public
-  #     responses:
-  #       201:
-  #         description: Poll created successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         poll:
-  #                           $ref: '#/components/schemas/Poll'
-  #       400:
-  #         description: Validation error
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Poll]
+      summary: Create new poll (never expires)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question, options]
+              properties:
+                question:
+                  type: string
+                  maxLength: 300
+                  example: "What is your favorite programming language?"
+                options:
+                  type: array
+                  minItems: 2
+                  maxItems: 10
+                  items:
+                    type: string
+                    maxLength: 100
+                  example: ["JavaScript", "Python", "Java", "C++"]
+                visibility:
+                  type: string
+                  enum: [public, private]
+                  default: public
+      responses:
+        201:
+          description: Poll created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          poll:
+                            $ref: '#/components/schemas/Poll'
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /poll/{id}:
-  #   get:
-  #     tags: [Poll]
-  #     summary: Get poll by ID
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Poll retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         poll:
-  #                           $ref: '#/components/schemas/Poll'
-  #       404:
-  #         description: Poll not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /poll/{id}:
+    get:
+      tags: [Poll]
+      summary: Get poll by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Poll retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          poll:
+                            $ref: '#/components/schemas/Poll'
+        404:
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  #   put:
-  #     tags: [Poll]
-  #     summary: Update my poll
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             properties:
-  #               question:
-  #                 type: string
-  #                 maxLength: 300
-  #               options:
-  #                 type: array
-  #                 minItems: 2
-  #                 maxItems: 10
-  #                 items:
-  #                   type: string
-  #               visibility:
-  #                 type: string
-  #                 enum: [public, private]
-  #               isActive:
-  #                 type: boolean
-  #     responses:
-  #       200:
-  #         description: Poll updated successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         poll:
-  #                           $ref: '#/components/schemas/Poll'
-  #       400:
-  #         description: Cannot modify question or options after votes are cast
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Access denied
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Poll not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Poll]
+      summary: Update my poll
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                question:
+                  type: string
+                  maxLength: 300
+                options:
+                  type: array
+                  minItems: 2
+                  maxItems: 10
+                  items:
+                    type: string
+                visibility:
+                  type: string
+                  enum: [public, private]
+                isActive:
+                  type: boolean
+      responses:
+        200:
+          description: Poll updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          poll:
+                            $ref: '#/components/schemas/Poll'
+        400:
+          description: Cannot modify question or options after votes are cast
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  #   delete:
-  #     tags: [Poll]
-  #     summary: Delete my poll
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Poll deleted successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
-  #       403:
-  #         description: Access denied
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Poll not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Poll]
+      summary: Delete my poll
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Poll deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        403:
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /poll/my/polls:
-  #   get:
-  #     tags: [Poll]
-  #     summary: Get my polls
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: page
-  #         in: query
-  #         schema:
-  #           type: integer
-  #           default: 1
-  #       - name: limit
-  #         in: query
-  #         schema:
-  #           type: integer
-  #           default: 10
-  #     responses:
-  #       200:
-  #         description: My polls retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         polls:
-  #                           type: array
-  #                           items:
-  #                             $ref: '#/components/schemas/Poll'
-  #                         pagination:
-  #                           type: object
-  #                           properties:
-  #                             current:
-  #                               type: integer
-  #                             total:
-  #                               type: integer
-  #                             count:
-  #                               type: integer
+  /poll/my/polls:
+    get:
+      tags: [Poll]
+      summary: Get my polls
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: My polls retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          polls:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Poll'
+                          pagination:
+                            type: object
+                            properties:
+                              current:
+                                type: integer
+                              total:
+                                type: integer
+                              count:
+                                type: integer
 
-  # /poll/{id}/vote:
-  #   post:
-  #     tags: [Poll]
-  #     summary: Vote on poll (polls never expire)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             required: [optionIndex]
-  #             properties:
-  #               optionIndex:
-  #                 type: integer
-  #                 minimum: 0
-  #                 example: 0
-  #                 description: "Array index of the option (0 for first option, 1 for second, etc.)"
-  #     responses:
-  #       200:
-  #         description: Vote recorded successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         poll:
-  #                           $ref: '#/components/schemas/Poll'
-  #       400:
-  #         description: Invalid option index or user already voted
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Poll not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /poll/{id}/vote:
+    post:
+      tags: [Poll]
+      summary: Vote on poll (polls never expire)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [optionIndex]
+              properties:
+                optionIndex:
+                  type: integer
+                  minimum: 0
+                  example: 0
+                  description: "Array index of the option (0 for first option, 1 for second, etc.)"
+      responses:
+        200:
+          description: Vote recorded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          poll:
+                            $ref: '#/components/schemas/Poll'
+        400:
+          description: Invalid option index or user already voted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  #   delete:
-  #     tags: [Poll]
-  #     summary: Remove vote from poll
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Vote removed successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         poll:
-  #                           $ref: '#/components/schemas/Poll'
-  #       400:
-  #         description: No vote found to remove
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Poll not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Poll]
+      summary: Remove vote from poll
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Vote removed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          poll:
+                            $ref: '#/components/schemas/Poll'
+        400:
+          description: No vote found to remove
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /poll/admin/all:
-  #   get:
-  #     tags: [Poll]
-  #     summary: Get all polls (Admin/Superadmin)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: page
-  #         in: query
-  #         schema:
-  #           type: integer
-  #           default: 1
-  #       - name: limit
-  #         in: query
-  #         schema:
-  #           type: integer
-  #           default: 10
-  #       - name: includeDeleted
-  #         in: query
-  #         schema:
-  #           type: boolean
-  #           default: false
-  #     responses:
-  #       200:
-  #         description: Admin polls retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         polls:
-  #                           type: array
-  #                           items:
-  #                             $ref: '#/components/schemas/Poll'
-  #                         pagination:
-  #                           type: object
-  #                           properties:
-  #                             current:
-  #                               type: integer
-  #                             total:
-  #                               type: integer
-  #                             count:
-  #                               type: integer
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden - Admin or Superadmin role required
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /poll/admin/all:
+    get:
+      tags: [Poll]
+      summary: Get all polls (Admin/Superadmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: includeDeleted
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          description: Admin polls retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          polls:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Poll'
+                          pagination:
+                            type: object
+                            properties:
+                              current:
+                                type: integer
+                              total:
+                                type: integer
+                              count:
+                                type: integer
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin or Superadmin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /poll/{id}/admin-update:
-  #   put:
-  #     tags: [Poll]
-  #     summary: Admin update poll (full control)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             properties:
-  #               question:
-  #                 type: string
-  #                 maxLength: 300
-  #               options:
-  #                 type: array
-  #                 minItems: 2
-  #                 maxItems: 10
-  #                 items:
-  #                   type: string
-  #               isActive:
-  #                 type: boolean
-  #               isDeleted:
-  #                 type: boolean
-  #               visibility:
-  #                 type: string
-  #                 enum: [public, private]
-  #     responses:
-  #       200:
-  #         description: Poll updated successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         poll:
-  #                           $ref: '#/components/schemas/Poll'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden - Admin or Superadmin role required
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Poll not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /poll/{id}/admin-update:
+    put:
+      tags: [Poll]
+      summary: Admin update poll (full control)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                question:
+                  type: string
+                  maxLength: 300
+                options:
+                  type: array
+                  minItems: 2
+                  maxItems: 10
+                  items:
+                    type: string
+                isActive:
+                  type: boolean
+                isDeleted:
+                  type: boolean
+                visibility:
+                  type: string
+                  enum: [public, private]
+      responses:
+        200:
+          description: Poll updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          poll:
+                            $ref: '#/components/schemas/Poll'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin or Superadmin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /poll/{id}/admin-delete:
-  #   delete:
-  #     tags: [Poll]
-  #     summary: Admin delete poll (any poll)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Poll deleted successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ApiResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden - Admin or Superadmin role required
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Poll not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /poll/{id}/admin-delete:
+    delete:
+      tags: [Poll]
+      summary: Admin delete poll (any poll)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Poll deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin or Superadmin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 
 tags:
@@ -4920,5 +4920,5 @@ tags:
     description: Reels categories and videos management
   # - name: Support
   #   description: Support ticket management system
-  # - name: Poll
-  #   description: Poll management system for voting and surveys
+  - name: Poll
+    description: Poll management system for voting and surveys
