@@ -554,6 +554,45 @@ components:
           type: string
           format: date-time
 
+      #   Support:
+      # type: object
+      # properties:
+      #   _id:
+      #     type: string
+      #   subject:
+      #     type: string
+      #   description:
+      #     type: string
+      #   status:
+      #     type: string
+      #     enum: [open, inprogress, resolved]
+      #   priority:
+      #     type: string
+      #     enum: [low, medium, high, urgent]
+      #   createdBy:
+      #     oneOf:
+      #       - type: string
+      #       - $ref: '#/components/schemas/User'
+      #   assignedTo:
+      #     oneOf:
+      #       - type: string
+      #       - $ref: '#/components/schemas/User'
+      #   resolvedAt:
+      #     type: string
+      #     format: date-time
+      #   resolvedBy:
+      #     oneOf:
+      #       - type: string
+      #       - $ref: '#/components/schemas/User'
+      #   adminNotes:
+      #     type: string
+      #   createdAt:
+      #     type: string
+      #     format: date-time
+      #   updatedAt:
+      #     type: string
+      #     format: date-time
+
         Support:
       type: object
       properties:
@@ -566,26 +605,13 @@ components:
         status:
           type: string
           enum: [open, inprogress, resolved]
-        priority:
-          type: string
-          enum: [low, medium, high, urgent]
         createdBy:
-          oneOf:
-            - type: string
-            - $ref: '#/components/schemas/User'
-        assignedTo:
           oneOf:
             - type: string
             - $ref: '#/components/schemas/User'
         resolvedAt:
           type: string
           format: date-time
-        resolvedBy:
-          oneOf:
-            - type: string
-            - $ref: '#/components/schemas/User'
-        adminNotes:
-          type: string
         createdAt:
           type: string
           format: date-time
@@ -3711,6 +3737,128 @@ paths:
 # ----------------------------------------------------- Support api endpoints -----------------------------------------------------
 
 
+  # /support:
+  #   post:
+  #     tags: [Support]
+  #     summary: Create support ticket
+  #     description: Create a new support ticket for any authenticated user
+  #     security:
+  #       - BearerAuth: []
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required: [subject, description]
+  #             properties:
+  #               subject:
+  #                 type: string
+  #                 maxLength: 200
+  #                 example: "Login Issue"
+  #               description:
+  #                 type: string
+  #                 maxLength: 2000
+  #                 example: "I am unable to login to my account"
+  #               priority:
+  #                 type: string
+  #                 enum: [low, medium, high, urgent]
+  #                 default: medium
+  #                 example: "medium"
+  #     responses:
+  #       201:
+  #         description: Support ticket created successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         support:
+  #                           $ref: '#/components/schemas/Support'
+  #                     message:
+  #                       type: string
+  #                       example: "Support ticket created successfully"
+  #       400:
+  #         description: Validation error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  # /support/my-tickets:
+  #   get:
+  #     tags: [Support]
+  #     summary: Get my support tickets
+  #     description: Retrieve support tickets created by the authenticated user
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: status
+  #         in: query
+  #         schema:
+  #           type: string
+  #           enum: [open, inprogress, resolved]
+  #       - name: page
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 1
+  #           minimum: 1
+  #       - name: limit
+  #         in: query
+  #         schema:
+  #           type: integer
+  #           default: 10
+  #           minimum: 1
+  #           maximum: 50
+  #     responses:
+  #       200:
+  #         description: Support tickets retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               allOf:
+  #                 - $ref: '#/components/schemas/ApiResponse'
+  #                 - type: object
+  #                   properties:
+  #                     data:
+  #                       type: object
+  #                       properties:
+  #                         supports:
+  #                           type: array
+  #                           items:
+  #                             $ref: '#/components/schemas/Support'
+  #                         pagination:
+  #                           type: object
+  #                           properties:
+  #                             current:
+  #                               type: integer
+  #                             total:
+  #                               type: integer
+  #                             count:
+  #                               type: integer
+  #                     message:
+  #                       type: string
+  #                       example: "Support tickets retrieved successfully"
+  #       401:
+  #         description: Unauthorized
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+
+  
   /support:
     post:
       tags: [Support]
@@ -3734,11 +3882,6 @@ paths:
                   type: string
                   maxLength: 2000
                   example: "I am unable to login to my account"
-                priority:
-                  type: string
-                  enum: [low, medium, high, urgent]
-                  default: medium
-                  example: "medium"
       responses:
         201:
           description: Support ticket created successfully
@@ -3831,6 +3974,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
 
   /support/{id}:
     get:
