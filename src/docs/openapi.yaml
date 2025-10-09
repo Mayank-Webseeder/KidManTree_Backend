@@ -3711,655 +3711,655 @@ paths:
 # ----------------------------------------------------- Support api endpoints -----------------------------------------------------
 
 
-  # /support:
-  #   post:
-  #     tags: [Support]
-  #     summary: Create support ticket
-  #     description: Create a new support ticket for any authenticated user
-  #     security:
-  #       - BearerAuth: []
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             required: [subject, description]
-  #             properties:
-  #               subject:
-  #                 type: string
-  #                 maxLength: 200
-  #                 example: "Login Issue"
-  #               description:
-  #                 type: string
-  #                 maxLength: 2000
-  #                 example: "I am unable to login to my account"
-  #               priority:
-  #                 type: string
-  #                 enum: [low, medium, high, urgent]
-  #                 default: medium
-  #                 example: "medium"
-  #     responses:
-  #       201:
-  #         description: Support ticket created successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         support:
-  #                           $ref: '#/components/schemas/Support'
-  #                     message:
-  #                       type: string
-  #                       example: "Support ticket created successfully"
-  #       400:
-  #         description: Validation error
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /support:
+    post:
+      tags: [Support]
+      summary: Create support ticket
+      description: Create a new support ticket for any authenticated user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, description]
+              properties:
+                subject:
+                  type: string
+                  maxLength: 200
+                  example: "Login Issue"
+                description:
+                  type: string
+                  maxLength: 2000
+                  example: "I am unable to login to my account"
+                priority:
+                  type: string
+                  enum: [low, medium, high, urgent]
+                  default: medium
+                  example: "medium"
+      responses:
+        201:
+          description: Support ticket created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          support:
+                            $ref: '#/components/schemas/Support'
+                      message:
+                        type: string
+                        example: "Support ticket created successfully"
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /support/my-tickets:
-  #   get:
-  #     tags: [Support]
-  #     summary: Get my support tickets
-  #     description: Retrieve support tickets created by the authenticated user
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: status
-  #         in: query
-  #         schema:
-  #           type: string
-  #           enum: [open, inprogress, resolved]
-  #       - name: page
-  #         in: query
-  #         schema:
-  #           type: integer
-  #           default: 1
-  #           minimum: 1
-  #       - name: limit
-  #         in: query
-  #         schema:
-  #           type: integer
-  #           default: 10
-  #           minimum: 1
-  #           maximum: 50
-  #     responses:
-  #       200:
-  #         description: Support tickets retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         supports:
-  #                           type: array
-  #                           items:
-  #                             $ref: '#/components/schemas/Support'
-  #                         pagination:
-  #                           type: object
-  #                           properties:
-  #                             current:
-  #                               type: integer
-  #                             total:
-  #                               type: integer
-  #                             count:
-  #                               type: integer
-  #                     message:
-  #                       type: string
-  #                       example: "Support tickets retrieved successfully"
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /support/my-tickets:
+    get:
+      tags: [Support]
+      summary: Get my support tickets
+      description: Retrieve support tickets created by the authenticated user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, inprogress, resolved]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 50
+      responses:
+        200:
+          description: Support tickets retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          supports:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Support'
+                          pagination:
+                            type: object
+                            properties:
+                              current:
+                                type: integer
+                              total:
+                                type: integer
+                              count:
+                                type: integer
+                      message:
+                        type: string
+                        example: "Support tickets retrieved successfully"
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /support/{id}:
-  #   get:
-  #     tags: [Support]
-  #     summary: Get support ticket by ID
-  #     description: Get a specific support ticket (users can only see their own tickets)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Support ticket retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         support:
-  #                           $ref: '#/components/schemas/Support'
-  #                     message:
-  #                       type: string
-  #                       example: "Support ticket retrieved successfully"
-  #       403:
-  #         description: Access denied
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Support ticket not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /support/{id}:
+    get:
+      tags: [Support]
+      summary: Get support ticket by ID
+      description: Get a specific support ticket (users can only see their own tickets)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Support ticket retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          support:
+                            $ref: '#/components/schemas/Support'
+                      message:
+                        type: string
+                        example: "Support ticket retrieved successfully"
+        403:
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Support ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  #   put:
-  #     tags: [Support]
-  #     summary: Update my support ticket
-  #     description: Update own support ticket (users can only update their own tickets)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             properties:
-  #               subject:
-  #                 type: string
-  #                 maxLength: 200
-  #               description:
-  #                 type: string
-  #                 maxLength: 2000
-  #               priority:
-  #                 type: string
-  #                 enum: [low, medium, high, urgent]
-  #     responses:
-  #       200:
-  #         description: Support ticket updated successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         support:
-  #                           $ref: '#/components/schemas/Support'
-  #                     message:
-  #                       type: string
-  #                       example: "Support ticket updated successfully"
-  #       400:
-  #         description: Cannot update resolved tickets
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Access denied
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Support ticket not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Support]
+      summary: Update my support ticket
+      description: Update own support ticket (users can only update their own tickets)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subject:
+                  type: string
+                  maxLength: 200
+                description:
+                  type: string
+                  maxLength: 2000
+                priority:
+                  type: string
+                  enum: [low, medium, high, urgent]
+      responses:
+        200:
+          description: Support ticket updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          support:
+                            $ref: '#/components/schemas/Support'
+                      message:
+                        type: string
+                        example: "Support ticket updated successfully"
+        400:
+          description: Cannot update resolved tickets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Support ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  #   delete:
-  #     tags: [Support]
-  #     summary: Delete my support ticket
-  #     description: Delete own support ticket (users can only delete their own tickets)
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Support ticket deleted successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     message:
-  #                       type: string
-  #                       example: "Support ticket deleted successfully"
-  #       403:
-  #         description: Access denied
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       404:
-  #         description: Support ticket not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Support]
+      summary: Delete my support ticket
+      description: Delete own support ticket (users can only delete their own tickets)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Support ticket deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Support ticket deleted successfully"
+        403:
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Support ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /support/admin/all:
-  #   get:
-  #     tags: [Support]
-  #     summary: Get all support tickets (Admin/Superadmin)
-  #     description: Retrieve all support tickets with filtering options for admins
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: status
-  #         in: query
-  #         schema:
-  #           type: string
-  #           enum: [open, inprogress, resolved]
-  #       - name: priority
-  #         in: query
-  #         schema:
-  #           type: string
-  #           enum: [low, medium, high, urgent]
-  #       - name: assignedTo
-  #         in: query
-  #         schema:
-  #           type: string
-  #       - name: page
-  #         in: query
-  #         schema:
-  #           type: integer
-  #           default: 1
-  #           minimum: 1
-  #       - name: limit
-  #         in: query
-  #         schema:
-  #           type: integer
-  #           default: 10
-  #           minimum: 1
-  #           maximum: 50
-  #     responses:
-  #       200:
-  #         description: Support tickets retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         supports:
-  #                           type: array
-  #                           items:
-  #                             $ref: '#/components/schemas/Support'
-  #                         pagination:
-  #                           type: object
-  #                           properties:
-  #                             current:
-  #                               type: integer
-  #                             total:
-  #                               type: integer
-  #                             count:
-  #                               type: integer
-  #                     message:
-  #                       type: string
-  #                       example: "Support tickets retrieved successfully"
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden - Admin or Superadmin role required
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /support/admin/all:
+    get:
+      tags: [Support]
+      summary: Get all support tickets (Admin/Superadmin)
+      description: Retrieve all support tickets with filtering options for admins
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, inprogress, resolved]
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, urgent]
+        - name: assignedTo
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 50
+      responses:
+        200:
+          description: Support tickets retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          supports:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Support'
+                          pagination:
+                            type: object
+                            properties:
+                              current:
+                                type: integer
+                              total:
+                                type: integer
+                              count:
+                                type: integer
+                      message:
+                        type: string
+                        example: "Support tickets retrieved successfully"
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin or Superadmin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /support/{id}/status:
-  #   patch:
-  #     tags: [Support]
-  #     summary: Update support ticket status (Admin/Superadmin)
-  #     description: Update support ticket status and add admin notes
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             required: [status]
-  #             properties:
-  #               status:
-  #                 type: string
-  #                 enum: [open, inprogress, resolved]
-  #               adminNotes:
-  #                 type: string
-  #                 maxLength: 1000
-  #     responses:
-  #       200:
-  #         description: Support status updated successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         support:
-  #                           $ref: '#/components/schemas/Support'
-  #                     message:
-  #                       type: string
-  #                       example: "Support status updated successfully"
-  #       404:
-  #         description: Support ticket not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden - Admin or Superadmin role required
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /support/{id}/status:
+    patch:
+      tags: [Support]
+      summary: Update support ticket status (Admin/Superadmin)
+      description: Update support ticket status and add admin notes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [open, inprogress, resolved]
+                adminNotes:
+                  type: string
+                  maxLength: 1000
+      responses:
+        200:
+          description: Support status updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          support:
+                            $ref: '#/components/schemas/Support'
+                      message:
+                        type: string
+                        example: "Support status updated successfully"
+        404:
+          description: Support ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin or Superadmin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /support/{id}/assign:
-  #   patch:
-  #     tags: [Support]
-  #     summary: Assign support ticket (Admin/Superadmin)
-  #     description: Assign support ticket to a specific user
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             properties:
-  #               assignedTo:
-  #                 type: string
-  #                 description: User ID to assign ticket to (null to unassign)
-  #     responses:
-  #       200:
-  #         description: Support ticket assigned successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         support:
-  #                           $ref: '#/components/schemas/Support'
-  #                     message:
-  #                       type: string
-  #                       example: "Support ticket assigned successfully"
-  #       404:
-  #         description: Support ticket not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden - Admin or Superadmin role required
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /support/{id}/assign:
+    patch:
+      tags: [Support]
+      summary: Assign support ticket (Admin/Superadmin)
+      description: Assign support ticket to a specific user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assignedTo:
+                  type: string
+                  description: User ID to assign ticket to (null to unassign)
+      responses:
+        200:
+          description: Support ticket assigned successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          support:
+                            $ref: '#/components/schemas/Support'
+                      message:
+                        type: string
+                        example: "Support ticket assigned successfully"
+        404:
+          description: Support ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin or Superadmin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /support/{id}/admin-update:
-  #   put:
-  #     tags: [Support]
-  #     summary: Admin update support ticket
-  #     description: Admin can update any support ticket with full permissions
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             properties:
-  #               subject:
-  #                 type: string
-  #                 maxLength: 200
-  #               description:
-  #                 type: string
-  #                 maxLength: 2000
-  #               priority:
-  #                 type: string
-  #                 enum: [low, medium, high, urgent]
-  #               status:
-  #                 type: string
-  #                 enum: [open, inprogress, resolved]
-  #               adminNotes:
-  #                 type: string
-  #                 maxLength: 1000
-  #               assignedTo:
-  #                 type: string
-  #     responses:
-  #       200:
-  #         description: Support ticket updated successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         support:
-  #                           $ref: '#/components/schemas/Support'
-  #                     message:
-  #                       type: string
-  #                       example: "Support ticket updated successfully"
-  #       404:
-  #         description: Support ticket not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden - Admin or Superadmin role required
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /support/{id}/admin-update:
+    put:
+      tags: [Support]
+      summary: Admin update support ticket
+      description: Admin can update any support ticket with full permissions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subject:
+                  type: string
+                  maxLength: 200
+                description:
+                  type: string
+                  maxLength: 2000
+                priority:
+                  type: string
+                  enum: [low, medium, high, urgent]
+                status:
+                  type: string
+                  enum: [open, inprogress, resolved]
+                adminNotes:
+                  type: string
+                  maxLength: 1000
+                assignedTo:
+                  type: string
+      responses:
+        200:
+          description: Support ticket updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          support:
+                            $ref: '#/components/schemas/Support'
+                      message:
+                        type: string
+                        example: "Support ticket updated successfully"
+        404:
+          description: Support ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin or Superadmin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /support/{id}/admin-delete:
-  #   delete:
-  #     tags: [Support]
-  #     summary: Admin delete support ticket
-  #     description: Admin can delete any support ticket
-  #     security:
-  #       - BearerAuth: []
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #     responses:
-  #       200:
-  #         description: Support ticket deleted successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     message:
-  #                       type: string
-  #                       example: "Support ticket deleted successfully"
-  #       404:
-  #         description: Support ticket not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden - Admin or Superadmin role required
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /support/{id}/admin-delete:
+    delete:
+      tags: [Support]
+      summary: Admin delete support ticket
+      description: Admin can delete any support ticket
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Support ticket deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Support ticket deleted successfully"
+        404:
+          description: Support ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin or Superadmin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  # /support/admin/stats:
-  #   get:
-  #     tags: [Support]
-  #     summary: Get support statistics (Admin/Superadmin)
-  #     description: Get support ticket statistics and metrics for dashboard
-  #     security:
-  #       - BearerAuth: []
-  #     responses:
-  #       200:
-  #         description: Support statistics retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               allOf:
-  #                 - $ref: '#/components/schemas/ApiResponse'
-  #                 - type: object
-  #                   properties:
-  #                     data:
-  #                       type: object
-  #                       properties:
-  #                         totalTickets:
-  #                           type: integer
-  #                         resolvedTickets:
-  #                           type: integer
-  #                         openTickets:
-  #                           type: integer
-  #                         inProgressTickets:
-  #                           type: integer
-  #                         statusBreakdown:
-  #                           type: array
-  #                           items:
-  #                             type: object
-  #                             properties:
-  #                               _id:
-  #                                 type: string
-  #                               count:
-  #                                 type: integer
-  #                         priorityBreakdown:
-  #                           type: array
-  #                           items:
-  #                             type: object
-  #                             properties:
-  #                               _id:
-  #                                 type: string
-  #                               count:
-  #                                 type: integer
-  #                     message:
-  #                       type: string
-  #                       example: "Support statistics retrieved successfully"
-  #       401:
-  #         description: Unauthorized
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #       403:
-  #         description: Forbidden - Admin or Superadmin role required
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
+  /support/admin/stats:
+    get:
+      tags: [Support]
+      summary: Get support statistics (Admin/Superadmin)
+      description: Get support ticket statistics and metrics for dashboard
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Support statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          totalTickets:
+                            type: integer
+                          resolvedTickets:
+                            type: integer
+                          openTickets:
+                            type: integer
+                          inProgressTickets:
+                            type: integer
+                          statusBreakdown:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                _id:
+                                  type: string
+                                count:
+                                  type: integer
+                          priorityBreakdown:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                _id:
+                                  type: string
+                                count:
+                                  type: integer
+                      message:
+                        type: string
+                        example: "Support statistics retrieved successfully"
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin or Superadmin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 
 
@@ -4918,7 +4918,7 @@ tags:
     description: Podcast management
   - name: Reels
     description: Reels categories and videos management
-  # - name: Support
-  #   description: Support ticket management system
+  - name: Support
+    description: Support ticket management system
   - name: Poll
     description: Poll management system for voting and surveys
