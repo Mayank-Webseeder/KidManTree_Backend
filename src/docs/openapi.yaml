@@ -42,7 +42,7 @@ components:
           type: integer
         role:
           type: string
-          enum: [user, admin, superadmin, psychologist]
+          enum: [user, admin, superadmin, psychologist, user-panel]
         isEmailVerified:
           type: boolean
         isContactVerified:
@@ -60,6 +60,26 @@ components:
               type: array
               items:
                 type: string
+        modules:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              route:
+                type: string
+              permissions:
+                type: object
+                properties:
+                  read:
+                    type: boolean
+                  write:
+                    type: boolean
+                  delete:
+                    type: boolean
+        createdBy:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -67,34 +87,6 @@ components:
           type: string
           format: date-time
 
-    Post:
-      type: object
-      properties:
-        _id:
-          type: string
-        title:
-          type: string
-        content:
-          type: string
-        author:
-          $ref: '#/components/schemas/User'
-        moodTag:
-          type: string
-          enum: [Bad, NotGreat, OK, Happy, Joyful]
-        isAnonymous:
-          type: boolean
-        likesCount:
-          type: integer
-        unlikesCount:
-          type: integer
-        commentsCount:
-          type: integer
-        visibility:
-          type: string
-          enum: [public, private, friends]
-        createdAt:
-          type: string
-          format: date-time
 
     Podcast:
       type: object
@@ -593,7 +585,7 @@ components:
       #     type: string
       #     format: date-time
 
-        Support:
+    Support:
       type: object
       properties:
         _id:
@@ -671,6 +663,113 @@ components:
         updatedAt:
           type: string
           format: date-time
+  
+    Post:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+          maxLength: 200
+        content:
+          type: string
+          maxLength: 5000
+        author:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/User'
+        moodTag:
+          type: string
+          enum: [Crying, Sad, Exhausted, Calm, Happy, Chearful, Energetic, Confused, Anxious]
+        isAnonymous:
+          type: boolean
+          default: false
+        likes:
+          type: array
+          items:
+            type: object
+            properties:
+              user:
+                oneOf:
+                  - type: string
+                  - $ref: '#/components/schemas/User'
+              createdAt:
+                type: string
+                format: date-time
+        unlikes:
+          type: array
+          items:
+            type: object
+            properties:
+              user:
+                oneOf:
+                  - type: string
+                  - $ref: '#/components/schemas/User'
+              createdAt:
+                type: string
+                format: date-time
+        comments:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - $ref: '#/components/schemas/Comment'
+        isDeleted:
+          type: boolean
+          default: false
+        tags:
+          type: array
+          items:
+            type: string
+        visibility:
+          type: string
+          enum: [public, private, friends]
+          default: public
+        likesCount:
+          type: integer
+          readOnly: true
+        unlikesCount:
+          type: integer
+          readOnly: true
+        commentsCount:
+          type: integer
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Comment:
+      type: object
+      properties:
+        _id:
+          type: string
+        content:
+          type: string
+        author:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/User'
+        post:
+          type: string
+        isAnonymous:
+          type: boolean
+          default: false
+        isDeleted:
+          type: boolean
+          default: false
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+
+
 
 
 paths:
@@ -1227,7 +1326,7 @@ paths:
                 email:
                   type: string
                   format: email
-                  example: "user@example.com"
+                  example: "superadmin@gmail.com"
       responses:
         200:
           description: OTP sent successfully
@@ -1273,7 +1372,7 @@ paths:
                 email:
                   type: string
                   format: email
-                  example: "user@example.com"
+                  example: "superadmin@gmail.com"
                 otp:
                   type: string
                   example: "123456"
@@ -4505,6 +4604,514 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /user-panel:
+    post:
+      tags: [User Panel]
+      summary: Create user-panel account
+      description: Create a new user-panel account with specific module permissions (Admin/Superadmin only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, contact, age, modules]
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 50
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "SecurePass123!"
+                contact:
+                  type: string
+                  pattern: "^\\+?[1-9]\\d{1,14}$"
+                  example: "+1234567890"
+                age:
+                  type: integer
+                  minimum: 13
+                  maximum: 120
+                  example: 25
+                modules:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [name, route]
+                    properties:
+                      name:
+                        type: string
+                        example: "Dashboard"
+                      route:
+                        type: string
+                        example: "/dashboard"
+                      permissions:
+                        type: object
+                        properties:
+                          read:
+                            type: boolean
+                            default: true
+                          write:
+                            type: boolean
+                            default: false
+                          delete:
+                            type: boolean
+                            default: false
+      responses:
+        201:
+          description: User-panel account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        400:
+          description: Validation error or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin/Superadmin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags: [User Panel]
+      summary: Get all user-panel accounts
+      description: Retrieve all user-panel accounts with pagination and search (Admin/Superadmin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: User-panel accounts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin/Superadmin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /user-panel/modules:
+    get:
+      tags: [User Panel]
+      summary: Get available modules
+      description: Get list of all available modules for user-panel accounts (Admin/Superadmin only)
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Available modules retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin/Superadmin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /user-panel/{id}:
+    get:
+      tags: [User Panel]
+      summary: Get user-panel account by ID
+      description: Get a specific user-panel account by ID (Admin/Superadmin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: User-panel account retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin/Superadmin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User-panel account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [User Panel]
+      summary: Update user-panel account
+      description: Update user-panel account details (Admin/Superadmin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 50
+                  example: "John Smith"
+                email:
+                  type: string
+                  format: email
+                  example: "johnsmith@example.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "NewSecurePass123!"
+                contact:
+                  type: string
+                  pattern: "^\\+?[1-9]\\d{1,14}$"
+                  example: "+1234567890"
+                age:
+                  type: integer
+                  minimum: 13
+                  maximum: 120
+                  example: 25
+                modules:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [name, route]
+                    properties:
+                      name:
+                        type: string
+                        example: "Dashboard"
+                      route:
+                        type: string
+                        example: "/dashboard"
+                      permissions:
+                        type: object
+                        properties:
+                          read:
+                            type: boolean
+                            default: true
+                          write:
+                            type: boolean
+                            default: false
+                          delete:
+                            type: boolean
+                            default: false
+                isActive:
+                  type: boolean
+                  example: true
+      responses:
+        200:
+          description: User-panel account updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        400:
+          description: Validation error or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin/Superadmin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User-panel account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [User Panel]
+      summary: Delete user-panel account
+      description: Delete a user-panel account (Admin/Superadmin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: User-panel account deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin/Superadmin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User-panel account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /user-panel/{id}/modules:
+    patch:
+      tags: [User Panel]
+      summary: Update user-panel modules
+      description: Update modules for a user-panel account (Admin/Superadmin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [modules]
+              properties:
+                modules:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [name, route]
+                    properties:
+                      name:
+                        type: string
+                        example: "Reports"
+                      route:
+                        type: string
+                        example: "/reports"
+                      permissions:
+                        type: object
+                        properties:
+                          read:
+                            type: boolean
+                            default: true
+                          write:
+                            type: boolean
+                            default: false
+                          delete:
+                            type: boolean
+                            default: false
+      responses:
+        200:
+          description: Modules updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin/Superadmin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User-panel account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /user-panel/{id}/toggle-active:
+    patch:
+      tags: [User Panel]
+      summary: Toggle user-panel active status
+      description: Toggle active/inactive status of a user-panel account (Admin/Superadmin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Active status toggled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin/Superadmin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User-panel account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 
 
 
@@ -5043,6 +5650,489 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
 
+# ----------------------------------------------------- post apis endpoints -----------------------------------------------------
+    
+  /post:
+    get:
+      tags: [Post]
+      summary: Get all posts
+      description: Retrieve posts with pagination and filtering options
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 50
+        - name: moodTag
+          in: query
+          schema:
+            type: string
+            enum: [Crying, Sad, Exhausted, Calm, Happy, Chearful, Energetic, Confused, Anxious]
+        - name: author
+          in: query
+          schema:
+            type: string
+            description: Filter by author ID
+      responses:
+        200:
+          description: Posts retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          posts:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Post'
+                          pagination:
+                            type: object
+                            properties:
+                              currentPage:
+                                type: integer
+                              totalPages:
+                                type: integer
+                              totalItems:
+                                type: integer
+                      message:
+                        type: string
+                        example: "Posts retrieved successfully"
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Post]
+      summary: Create new post
+      description: Create a new social media post
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, content]
+              properties:
+                title:
+                  type: string
+                  maxLength: 200
+                  example: "Feeling great today!"
+                content:
+                  type: string
+                  maxLength: 5000
+                  example: "Had an amazing day at work and feeling really positive about life."
+                moodTag:
+                  type: string
+                  enum: [Crying, Sad, Exhausted, Calm, Happy, Chearful, Energetic, Confused, Anxious]
+                  example: "Happy"
+                isAnonymous:
+                  type: boolean
+                  default: false
+                  example: false
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  example: ["motivation", "positivity"]
+                visibility:
+                  type: string
+                  enum: [public, private, friends]
+                  default: public
+                  example: "public"
+      responses:
+        201:
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          post:
+                            $ref: '#/components/schemas/Post'
+                      message:
+                        type: string
+                        example: "Post created successfully"
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /post/{id}:
+    get:
+      tags: [Post]
+      summary: Get post by ID
+      description: Retrieve a specific post with comments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Post retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          post:
+                            $ref: '#/components/schemas/Post'
+                      message:
+                        type: string
+                        example: "Post retrieved successfully"
+        404:
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [Post]
+      summary: Update my post
+      description: Update own post (users can only update their own posts)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  maxLength: 200
+                content:
+                  type: string
+                  maxLength: 5000
+                moodTag:
+                  type: string
+                  enum: [Crying, Sad, Exhausted, Calm, Happy, Chearful, Energetic, Confused, Anxious]
+                visibility:
+                  type: string
+                  enum: [public, private, friends]
+      responses:
+        200:
+          description: Post updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          post:
+                            $ref: '#/components/schemas/Post'
+                      message:
+                        type: string
+                        example: "Post updated successfully"
+        403:
+          description: Access denied - Not authorized to update this post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Post]
+      summary: Delete post
+      description: Delete own post (users can only delete their own posts, admins can delete any post)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Post deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Post deleted successfully"
+        403:
+          description: Access denied - Not authorized to delete this post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /post/{id}/like:
+    post:
+      tags: [Post]
+      summary: Like/Unlike post
+      description: Toggle like on a post (removes unlike if exists, toggles like status)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Post like status updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          liked:
+                            type: boolean
+                            description: Whether the post is now liked by the user
+                          likesCount:
+                            type: integer
+                            description: Current total likes count
+                          unlikesCount:
+                            type: integer
+                            description: Current total unlikes count
+                      message:
+                        type: string
+                        example: "Post liked"
+        404:
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /post/{id}/comments:
+    get:
+      tags: [Post]
+      summary: Get post comments
+      description: Retrieve comments for a specific post with pagination
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        200:
+          description: Comments retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          comments:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Comment'
+                          pagination:
+                            type: object
+                            properties:
+                              currentPage:
+                                type: integer
+                              totalPages:
+                                type: integer
+                              totalItems:
+                                type: integer
+                      message:
+                        type: string
+                        example: "Comments retrieved successfully"
+        404:
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Post]
+      summary: Add comment to post
+      description: Add a new comment to a specific post
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+                  example: "Great post! Thanks for sharing."
+                isAnonymous:
+                  type: boolean
+                  default: false
+                  example: false
+      responses:
+        201:
+          description: Comment added successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          comment:
+                            $ref: '#/components/schemas/Comment'
+                      message:
+                        type: string
+                        example: "Comment added successfully"
+        400:
+          description: Comment content is required or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
 tags:
   - name: Auth
     description: Authentication and authorization
@@ -5064,5 +6154,10 @@ tags:
     description: Reels categories and videos management
   - name: Support
     description: Support ticket management system
+  - name: User Panel
+    description: User-panel account management with module permissions
   - name: Poll
     description: Poll management system for voting and surveys
+  - name: Post
+    description: Post management system for social content sharing
+

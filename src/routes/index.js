@@ -14,13 +14,14 @@ const musicRoutes = require("./musicRoutes");
 const podcastRoutes = require("./podcastRoutes");
 const reelRoutes = require("./reelRoutes");
 const supportRoutes = require("./supportRoutes");
+const userPanelRoutes = require("./userPanelRoutes");
 
 const router = express.Router();
 
 // API Routes
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
-router.use("/posts", postRoutes);
+router.use("/post", postRoutes);
 router.use("/poll", pollRoutes);
 router.use("/moods", moodRoutes);
 router.use("/psychologists", psychologistRoutes);
@@ -33,6 +34,7 @@ router.use("/music", musicRoutes);
 router.use("/podcasts", podcastRoutes);
 router.use("/reels", reelRoutes);
 router.use("/support", supportRoutes);
+router.use("/user-panel", userPanelRoutes);
 
 // Health check for API
 router.get("/health", (req, res) => {
