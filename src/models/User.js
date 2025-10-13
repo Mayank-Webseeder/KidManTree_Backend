@@ -99,11 +99,6 @@ const userSchema = new mongoose.Schema(
           type: String,
           required: true,
         },
-        permissions: {
-          read: { type: Boolean, default: true },
-          write: { type: Boolean, default: false },
-          delete: { type: Boolean, default: false },
-        },
       },
     ],
     createdBy: {

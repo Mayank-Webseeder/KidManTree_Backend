@@ -85,11 +85,6 @@ const userPanelCreateSchema = Joi.object({
       Joi.object({
         name: Joi.string().required(),
         route: Joi.string().required(),
-        permissions: Joi.object({
-          read: Joi.boolean().default(true),
-          write: Joi.boolean().default(false),
-          delete: Joi.boolean().default(false),
-        }).optional(),
       })
     )
     .min(1)
@@ -112,11 +107,6 @@ const userPanelUpdateSchema = Joi.object({
       Joi.object({
         name: Joi.string().required(),
         route: Joi.string().required(),
-        permissions: Joi.object({
-          read: Joi.boolean().default(true),
-          write: Joi.boolean().default(false),
-          delete: Joi.boolean().default(false),
-        }).optional(),
       })
     )
     .min(1)
@@ -130,11 +120,6 @@ const moduleUpdateSchema = Joi.object({
       Joi.object({
         name: Joi.string().required(),
         route: Joi.string().required(),
-        permissions: Joi.object({
-          read: Joi.boolean().default(true),
-          write: Joi.boolean().default(false),
-          delete: Joi.boolean().default(false),
-        }).optional(),
       })
     )
     .min(1)

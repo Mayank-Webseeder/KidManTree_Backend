@@ -172,6 +172,10 @@ components:
       properties:
         _id:
           type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
         name:
           type: string
         email:
@@ -219,6 +223,12 @@ components:
                 type: boolean
         isActive:
           type: boolean
+        status:
+          type: string
+          enum: [pending, selected, rejected]
+        accountActivatedAt:
+          type: string
+          format: date-time
         profileImage:
           type: string
         languages:
@@ -1685,6 +1695,265 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /psychologists/public/apply:
+    post:
+      tags: [Psychologists]
+      summary: Public application to become psychologist/counselor
+      description: Submit an application; admin will review and set status. Created profile status is pending.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName, lastName, email, degree, experience, city, contactNumber, aadharNumber, aadharDocument]
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                degree:
+                  type: string
+                experience:
+                  type: integer
+                  minimum: 0
+                about:
+                  type: string
+                specializations:
+                  type: array
+                  items:
+                    type: string
+                languages:
+                  type: array
+                  items:
+                    type: string
+                sessionRate:
+                  type: number
+                city:
+                  type: string
+                contactNumber:
+                  type: string
+                role:
+                  type: string
+                  enum: [psychologist, counselor]
+                aadharNumber:
+                  type: string
+                aadharDocument:
+                  type: string
+                uploadDocuments:
+                  type: array
+                  items:
+                    type: string
+                schedule:
+                  type: array
+                  items:
+                    type: object
+                profileImage:
+                  type: string
+      responses:
+        201:
+          description: Application submitted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          applicationId:
+                            type: string
+                          status:
+                            type: string
+                            enum: [pending, selected, rejected]
+                      message:
+                        type: string
+                        example: Application submitted successfully
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /psychologists/admin:
+    get:
+      tags: [Psychologists]
+      summary: Admin list psychologists/applications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, selected, rejected]
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [psychologist, counselor]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: Psychologists retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /psychologists/admin/{id}:
+    get:
+      tags: [Psychologists]
+      summary: Admin get single psychologist/application
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Psychologist retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /psychologists/{id}/status:
+    put:
+      tags: [Psychologists]
+      summary: Admin update psychologist status
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, selected, rejected]
+      responses:
+        200:
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          psychologist:
+                            $ref: '#/components/schemas/Psychologist'
+                          generatedPassword:
+                            type: string
+                            nullable: true
+
+  /psychologists/{id}/reviews:
+    get:
+      tags: [Psychologists]
+      summary: Get reviews for psychologist (public)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: Reviews retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+    post:
+      tags: [Psychologists]
+      summary: Create/update my review for psychologist (Users only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating]
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+      responses:
+        200:
+          description: Review saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
   /psychologists/{id}:
     get:
       tags: [Psychologists]
@@ -4608,7 +4877,7 @@ paths:
     post:
       tags: [User Panel]
       summary: Create user-panel account
-      description: Create a new user-panel account with specific module permissions (Admin/Superadmin only)
+      description: Create a new user-panel account (Admin/Superadmin only)
       security:
         - BearerAuth: []
       requestBody:
@@ -4655,18 +4924,6 @@ paths:
                       route:
                         type: string
                         example: "/dashboard"
-                      permissions:
-                        type: object
-                        properties:
-                          read:
-                            type: boolean
-                            default: true
-                          write:
-                            type: boolean
-                            default: false
-                          delete:
-                            type: boolean
-                            default: false
       responses:
         201:
           description: User-panel account created successfully
@@ -4886,18 +5143,6 @@ paths:
                       route:
                         type: string
                         example: "/dashboard"
-                      permissions:
-                        type: object
-                        properties:
-                          read:
-                            type: boolean
-                            default: true
-                          write:
-                            type: boolean
-                            default: false
-                          delete:
-                            type: boolean
-                            default: false
                 isActive:
                   type: boolean
                   example: true
@@ -5017,18 +5262,6 @@ paths:
                       route:
                         type: string
                         example: "/reports"
-                      permissions:
-                        type: object
-                        properties:
-                          read:
-                            type: boolean
-                            default: true
-                          write:
-                            type: boolean
-                            default: false
-                          delete:
-                            type: boolean
-                            default: false
       responses:
         200:
           description: Modules updated successfully
