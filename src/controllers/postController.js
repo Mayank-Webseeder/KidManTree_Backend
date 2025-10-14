@@ -1,6 +1,7 @@
 const Post = require("../models/Post");
 const Comment = require("../models/Comment");
 const { successResponse, errorResponse } = require("../utils/response");
+const { getFileUrl } = require("../utils/fileUrl");
 const { postSchema } = require("../utils/validators");
 const logger = require("../utils/logger");
 
@@ -16,15 +17,34 @@ class PostController {
         return errorResponse(res, "Validation failed", 400, errors);
       }
 
-      const post = new Post({
+      const postData = {
         ...req.body,
         author: req.user.id,
-      });
+      };
+
+      if (req.file) {
+        const relativePath = req.file.path
+          .replace(/\\/g, "/")
+          .replace(process.cwd(), "")
+          .replace(/^\//, "");
+        postData.postImage = relativePath;
+      }
+
+      const post = new Post(postData);
 
       await post.save();
       await post.populate("author", "name profile.avatar");
 
-      return successResponse(res, { post }, "Post created successfully", 201);
+      const postObj = post.toObject();
+      if (postObj.postImage) {
+        postObj.postImageUrl = getFileUrl(postObj.postImage);
+      }
+      return successResponse(
+        res,
+        { post: postObj },
+        "Post created successfully",
+        201
+      );
     } catch (error) {
       logger.error("Create post error:", error);
       return errorResponse(res, "Failed to create post", 500);
@@ -47,10 +67,16 @@ class PostController {
 
       const total = await Post.countDocuments(query);
 
+      const postsWithUrls = posts.map((p) => {
+        const obj = p.toObject();
+        if (obj.postImage) obj.postImageUrl = getFileUrl(obj.postImage);
+        return obj;
+      });
+
       return successResponse(
         res,
         {
-          posts,
+          posts: postsWithUrls,
           pagination: {
             currentPage: page,
             totalPages: Math.ceil(total / limit),
@@ -84,7 +110,9 @@ class PostController {
         return errorResponse(res, "Post not found", 404);
       }
 
-      return successResponse(res, { post }, "Post retrieved successfully");
+      const obj = post.toObject();
+      if (obj.postImage) obj.postImageUrl = getFileUrl(obj.postImage);
+      return successResponse(res, { post: obj }, "Post retrieved successfully");
     } catch (error) {
       logger.error("Get post error:", error);
       return errorResponse(res, "Failed to retrieve post", 500);
@@ -114,10 +142,26 @@ class PostController {
       if (visibility) post.visibility = visibility;
       if (tags) post.tags = tags;
 
+      if (req.file) {
+        const relativePath = req.file.path
+          .replace(/\\/g, "/")
+          .replace(process.cwd(), "")
+          .replace(/^\//, "");
+        post.postImage = relativePath;
+      }
+
       await post.save();
       await post.populate("author", "name profile.avatar");
 
-      return successResponse(res, { post }, "Post updated successfully");
+      const updated = post.toObject();
+      if (updated.postImage)
+        updated.postImageUrl = getFileUrl(updated.postImage);
+
+      return successResponse(
+        res,
+        { post: updated },
+        "Post updated successfully"
+      );
     } catch (error) {
       logger.error("Update post error:", error);
       return errorResponse(res, "Failed to update post", 500);

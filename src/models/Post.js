@@ -76,6 +76,9 @@ const postSchema = new mongoose.Schema(
       enum: ["public", "private", "friends"],
       default: "public",
     },
+    postImage: {
+      type: String,
+    },
   },
   {
     timestamps: true,

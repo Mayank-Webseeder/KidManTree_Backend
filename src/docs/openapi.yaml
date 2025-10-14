@@ -736,6 +736,12 @@ components:
           type: string
           enum: [public, private, friends]
           default: public
+        postImage:
+          type: string
+          description: Relative path of uploaded post image
+        postImageUrl:
+          type: string
+          description: Absolute URL for accessing the post image
         likesCount:
           type: integer
           readOnly: true
@@ -5961,7 +5967,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required: [title, content]
@@ -5992,6 +5998,10 @@ paths:
                   enum: [public, private, friends]
                   default: public
                   example: "public"
+                postImage:
+                  type: string
+                  format: binary
+                  description: Optional image file for the post
       responses:
         201:
           description: Post created successfully
@@ -6082,7 +6092,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               properties:
@@ -6098,6 +6108,10 @@ paths:
                 visibility:
                   type: string
                   enum: [public, private, friends]
+                postImage:
+                  type: string
+                  format: binary
+                  description: New image file to replace existing
       responses:
         200:
           description: Post updated successfully
