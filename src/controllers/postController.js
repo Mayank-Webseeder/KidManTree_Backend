@@ -1,6 +1,7 @@
 const Post = require("../models/Post");
 const Comment = require("../models/Comment");
 const { successResponse, errorResponse } = require("../utils/response");
+const path = require("path");
 const { getFileUrl } = require("../utils/fileUrl");
 const { postSchema } = require("../utils/validators");
 const logger = require("../utils/logger");
@@ -8,7 +9,26 @@ const logger = require("../utils/logger");
 class PostController {
   async createPost(req, res) {
     try {
-      const { error } = postSchema.validate(req.body);
+      // Normalize multipart fields (e.g., tags sent as comma-separated string)
+      const normalizedBody = { ...req.body };
+      if (typeof normalizedBody.tags === "string") {
+        normalizedBody.tags = normalizedBody.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
+      } else if (Array.isArray(normalizedBody["tags[]"])) {
+        normalizedBody.tags = normalizedBody["tags[]"]
+          .map((t) => `${t}`.trim())
+          .filter(Boolean);
+        delete normalizedBody["tags[]"];
+      }
+      if (typeof normalizedBody.isAnonymous === "string") {
+        normalizedBody.isAnonymous = ["true", "1", "yes"].includes(
+          normalizedBody.isAnonymous.toLowerCase()
+        );
+      }
+
+      const { error } = postSchema.validate(normalizedBody);
       if (error) {
         const errors = error.details.map((detail) => ({
           field: detail.path[0],
@@ -18,15 +38,14 @@ class PostController {
       }
 
       const postData = {
-        ...req.body,
+        ...normalizedBody,
         author: req.user.id,
       };
 
       if (req.file) {
-        const relativePath = req.file.path
-          .replace(/\\/g, "/")
-          .replace(process.cwd(), "")
-          .replace(/^\//, "");
+        const relativePath = path
+          .relative(process.cwd(), req.file.path)
+          .replace(/\\/g, "/");
         postData.postImage = relativePath;
       }
 
@@ -134,7 +153,24 @@ class PostController {
         return errorResponse(res, "Post not found or not authorized", 404);
       }
 
-      const { title, content, moodTag, visibility, tags } = req.body;
+      // Normalize fields similar to create
+      const body = { ...req.body };
+      if (typeof body.tags === "string") {
+        body.tags = body.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
+      } else if (Array.isArray(body["tags[]"])) {
+        body.tags = body["tags[]"].map((t) => `${t}`.trim()).filter(Boolean);
+        delete body["tags[]"];
+      }
+      if (typeof body.isAnonymous === "string") {
+        body.isAnonymous = ["true", "1", "yes"].includes(
+          body.isAnonymous.toLowerCase()
+        );
+      }
+
+      const { title, content, moodTag, visibility, tags } = body;
 
       if (title) post.title = title;
       if (content) post.content = content;
@@ -143,10 +179,9 @@ class PostController {
       if (tags) post.tags = tags;
 
       if (req.file) {
-        const relativePath = req.file.path
-          .replace(/\\/g, "/")
-          .replace(process.cwd(), "")
-          .replace(/^\//, "");
+        const relativePath = path
+          .relative(process.cwd(), req.file.path)
+          .replace(/\\/g, "/");
         post.postImage = relativePath;
       }
 
