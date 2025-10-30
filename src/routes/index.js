@@ -15,6 +15,7 @@ const podcastRoutes = require("./podcastRoutes");
 const reelRoutes = require("./reelRoutes");
 const supportRoutes = require("./supportRoutes");
 const userPanelRoutes = require("./userPanelRoutes");
+const reportRoutes = require("./reportRoutes");
 
 const router = express.Router();
 
@@ -35,6 +36,7 @@ router.use("/podcasts", podcastRoutes);
 router.use("/reels", reelRoutes);
 router.use("/support", supportRoutes);
 router.use("/user-panel", userPanelRoutes);
+router.use("/reports", reportRoutes);
 
 // Health check for API
 router.get("/health", (req, res) => {

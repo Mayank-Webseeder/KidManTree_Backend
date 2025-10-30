@@ -784,10 +784,94 @@ components:
           type: string
           format: date-time
 
+    Report:
+      type: object
+      properties:
+        _id:
+          type: string
+        reporter:
+          $ref: '#/components/schemas/User'
+        targetType:
+          type: string
+          enum: [music, podcast, poll, reel, post]
+        targetId:
+          type: string
+        category:
+          type: string
+          enum:
+            - Hate speech and symbols
+            - Violence and incitement
+            - Harassment or bullying
+            - Nudity or sexual activity
+            - Sale of illegal or regulated goods
+            - Spam
+            - Scams or fraud
+            - Suicide or self-injury
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [pending, resolved]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
+    ReportCreateRequest:
+      type: object
+      required: [targetType, targetId, category, title]
+      properties:
+        targetType:
+          type: string
+          enum: [music, podcast, poll, reel, post]
+        targetId:
+          type: string
+          description: ObjectId of the target resource
+        category:
+          type: string
+          enum:
+            - Hate speech and symbols
+            - Violence and incitement
+            - Harassment or bullying
+            - Nudity or sexual activity
+            - Sale of illegal or regulated goods
+            - Spam
+            - Scams or fraud
+            - Suicide or self-injury
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
 
+    ReportStatusUpdateRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [pending, resolved]
 
-
+    PaginatedReports:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Report'
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
 paths:
   /auth/signup:
     post:
@@ -6379,6 +6463,221 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
 
+
+  /reports:
+    post:
+      tags: [Reports]
+      summary: Create a report
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportCreateRequest'
+      responses:
+        201:
+          description: Report submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reports/mine:
+    get:
+      tags: [Reports]
+      summary: Get my reports
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        200:
+          description: Reports fetched
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PaginatedReports'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reports/{id}:
+    delete:
+      tags: [Reports]
+      summary: Delete a report
+      description: Reporter can delete their own report; admin/superadmin can delete any
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Report deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reports/admin:
+    get:
+      tags: [Reports]
+      summary: Admin list all reports
+      description: Admin and superadmin only
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, resolved]
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: targetType
+          in: query
+          schema:
+            type: string
+            enum: [music, podcast, poll, reel, post]
+      responses:
+        200:
+          description: Reports fetched
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PaginatedReports'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reports/{id}/status:
+    patch:
+      tags: [Reports]
+      summary: Update report status
+      description: Admin and superadmin only
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportStatusUpdateRequest'
+      responses:
+        200:
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 tags:
   - name: Auth

@@ -126,6 +126,38 @@ const moduleUpdateSchema = Joi.object({
     .required(),
 });
 
+// Reports
+const REPORT_TARGET_TYPES = ["music", "podcast", "poll", "reel", "post"];
+const REPORT_CATEGORIES = [
+  "Hate speech and symbols",
+  "Violence and incitement",
+  "Harassment or bullying",
+  "Nudity or sexual activity",
+  "Sale of illegal or regulated goods",
+  "Spam",
+  "Scams or fraud",
+  "Suicide or self-injury",
+];
+const REPORT_STATUSES = ["pending", "resolved"];
+
+const reportCreateSchema = Joi.object({
+  targetType: Joi.string()
+    .valid(...REPORT_TARGET_TYPES)
+    .required(),
+  targetId: Joi.string().hex().length(24).required(),
+  category: Joi.string()
+    .valid(...REPORT_CATEGORIES)
+    .required(),
+  title: Joi.string().min(3).max(200).required(),
+  description: Joi.string().max(2000).allow("").optional(),
+});
+
+const reportStatusUpdateSchema = Joi.object({
+  status: Joi.string()
+    .valid(...REPORT_STATUSES)
+    .required(),
+});
+
 module.exports = {
   signupSchema,
   loginSchema,
@@ -137,4 +169,7 @@ module.exports = {
   userPanelCreateSchema,
   userPanelUpdateSchema,
   moduleUpdateSchema,
+  // reports
+  reportCreateSchema,
+  reportStatusUpdateSchema,
 };
