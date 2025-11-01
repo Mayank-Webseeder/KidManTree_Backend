@@ -7,6 +7,7 @@ const { successResponse, errorResponse } = require("../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
 const logger = require("../utils/logger");
+const path = require("path");
 
 class UserController {
   async getProfile(req, res) {
@@ -44,6 +45,121 @@ class UserController {
     } catch (error) {
       logger.error("Update profile error:", error);
       return errorResponse(res, "Failed to update profile", 500);
+    }
+  }
+
+  async updateProfileById(req, res) {
+    try {
+      const { id } = req.params;
+      const { name, bio, interests, emergencyContact } = req.body;
+      const userId = req.user.id;
+
+      // Check if user is updating their own profile or has admin rights
+      const requestingUser = await User.findById(userId);
+      if (
+        userId !== id &&
+        requestingUser.role !== "admin" &&
+        requestingUser.role !== "superadmin"
+      ) {
+        return errorResponse(res, "Unauthorized to update this profile", 403);
+      }
+
+      // Normalize interests field - handle both string and array formats from form data
+      let normalizedInterests = interests;
+      if (typeof interests === "string") {
+        normalizedInterests = interests
+          .split(",")
+          .map((i) => i.trim())
+          .filter(Boolean);
+      } else if (Array.isArray(interests)) {
+        normalizedInterests = interests
+          .map((i) => String(i).trim())
+          .filter(Boolean);
+      }
+
+      const updateData = {};
+      if (name !== undefined && name !== null && name.trim() !== "")
+        updateData.name = name.trim();
+      if (bio !== undefined && bio !== null) updateData["profile.bio"] = bio;
+      if (
+        normalizedInterests !== undefined &&
+        normalizedInterests !== null &&
+        normalizedInterests.length > 0
+      ) {
+        updateData["profile.interests"] = normalizedInterests;
+      }
+      if (
+        emergencyContact !== undefined &&
+        emergencyContact !== null &&
+        Object.keys(emergencyContact).length > 0
+      ) {
+        updateData["profile.emergencyContact"] = emergencyContact;
+      }
+
+      // Handle file uploads (avatar and docx)
+      if (req.files) {
+        if (req.files.avatar && req.files.avatar[0]) {
+          const relativePath = path
+            .relative(process.cwd(), req.files.avatar[0].path)
+            .replace(/\\/g, "/");
+          updateData["profile.avatar"] = relativePath;
+        }
+        if (req.files.docx && req.files.docx[0]) {
+          const relativePath = path
+            .relative(process.cwd(), req.files.docx[0].path)
+            .replace(/\\/g, "/");
+          updateData.docx = relativePath;
+        }
+      }
+
+      const user = await User.findByIdAndUpdate(
+        id,
+        { $set: updateData },
+        { new: true, select: "-password" }
+      );
+
+      if (!user) {
+        return errorResponse(res, "User not found", 404);
+      }
+
+      return successResponse(res, { user }, "Profile updated successfully");
+    } catch (error) {
+      logger.error("Update profile by ID error:", error);
+      return errorResponse(res, "Failed to update profile", 500);
+    }
+  }
+
+  async adminUpdateDocxVerification(req, res) {
+    try {
+      const { id } = req.params;
+      const { isDocxVerified } = req.body;
+
+      if (typeof isDocxVerified !== "boolean") {
+        return errorResponse(res, "isDocxVerified (boolean) is required", 400);
+      }
+
+      const user = await User.findByIdAndUpdate(
+        id,
+        { isDocxVerified },
+        { new: true, select: "-password" }
+      );
+
+      if (!user) {
+        return errorResponse(res, "User not found", 404);
+      }
+
+      return successResponse(
+        res,
+        { user },
+        "Docx verification status updated successfully"
+      );
+    } catch (error) {
+      logger.error("Admin update docx verification error:", error);
+      return errorResponse(
+        res,
+        "Failed to update docx verification status",
+        500
+      );
     }
   }
 

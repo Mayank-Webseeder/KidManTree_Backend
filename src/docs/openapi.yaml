@@ -47,6 +47,11 @@ components:
           type: boolean
         isContactVerified:
           type: boolean
+        docx:
+          type: string
+          nullable: true
+        isDocxVerified:
+          type: boolean
         isActive:
           type: boolean
         profile:
@@ -4171,6 +4176,182 @@ paths:
                       message:
                         type: string
                         example: User account deleted successfully
+        401:
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Admin or Superadmin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/updateProfile/{id}:
+    put:
+      tags: [Users]
+      summary: Update user profile by ID
+      description: Update user profile fields including name, profile picture, interests, and docx file. All fields are optional. Users can update their own profile, admins can update any profile.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                bio:
+                  type: string
+                interests:
+                  type: array
+                  items:
+                    type: string
+                emergencyContact:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    phone:
+                      type: string
+                    relationship:
+                      type: string
+                avatar:
+                  type: string
+                  format: binary
+                  description: Profile picture image file
+                docx:
+                  type: string
+                  format: binary
+                  description: DOCX file to upload
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                bio:
+                  type: string
+                interests:
+                  type: array
+                  items:
+                    type: string
+                emergencyContact:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    phone:
+                      type: string
+                    relationship:
+                      type: string
+      responses:
+        200:
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+                      message:
+                        type: string
+                        example: Profile updated successfully
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: Forbidden - Cannot update this profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/admin/{id}/docx-verification:
+    patch:
+      tags: [Users]
+      summary: Update docx verification status (Admin/Superadmin)
+      description: Update the isDocxVerified status for a user's uploaded docx file
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isDocxVerified]
+              properties:
+                isDocxVerified:
+                  type: boolean
+                  example: true
+      responses:
+        200:
+          description: Docx verification status updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+                      message:
+                        type: string
+                        example: Docx verification status updated successfully
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         401:
           description: Unauthorized - Invalid or missing token
           content:
