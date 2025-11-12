@@ -16,6 +16,7 @@ const reelRoutes = require("./reelRoutes");
 const supportRoutes = require("./supportRoutes");
 const userPanelRoutes = require("./userPanelRoutes");
 const reportRoutes = require("./reportRoutes");
+const bookingRoutes = require("./bookings");
 
 const router = express.Router();
 
@@ -37,6 +38,7 @@ router.use("/reels", reelRoutes);
 router.use("/support", supportRoutes);
 router.use("/user-panel", userPanelRoutes);
 router.use("/reports", reportRoutes);
+router.use("/bookings", bookingRoutes);
 
 // Health check for API
 router.get("/health", (req, res) => {

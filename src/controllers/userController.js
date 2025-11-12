@@ -535,6 +535,53 @@ class UserController {
   }
 
   // Admin/Superadmin: Get all user details, including feelings, questionnaires, support and reports
+  // async getUserDetails(req, res) {
+  //   try {
+  //     const { id } = req.params;
+  //     const user = await User.findById(id).select("-password");
+  //     if (!user) {
+  //       return errorResponse(res, "User not found", 404);
+  //     }
+
+  //     // Get feelings
+  //     const FeelingToday = require("../models/FeelingToday");
+  //     const feelings = await FeelingToday.find({ user: id }).sort({ date: -1 });
+
+  //     // Get questionnaire responses
+  //     const { QuestionnaireResponse } = require("../models/Questionnaire");
+  //     const questionnaireResponses = await QuestionnaireResponse.find({
+  //       user: id,
+  //     }).populate("questionnaire");
+
+  //     // Get reports made by user
+  //     const { Report } = require("../models/Report");
+  //     const reports = await Report.find({ reporter: id }).sort({
+  //       createdAt: -1,
+  //     });
+
+  //     // Get support tickets made by user
+  //     const Support = require("../models/Support");
+  //     const supports = await Support.find({ createdBy: id }).sort({
+  //       createdAt: -1,
+  //     });
+
+  //     return successResponse(
+  //       res,
+  //       {
+  //         user,
+  //         feelings,
+  //         questionnaireResponses,
+  //         reports,
+  //         supports,
+  //       },
+  //       "User details and all related data retrieved successfully"
+  //     );
+  //   } catch (error) {
+  //     logger.error("Get user details error:", error);
+  //     return errorResponse(res, "Failed to retrieve full user details", 500);
+  //   }
+  // }
+
   async getUserDetails(req, res) {
     try {
       const { id } = req.params;
@@ -565,6 +612,11 @@ class UserController {
         createdAt: -1,
       });
 
+      let psychologistDetails = null;
+      if (user.role === "psychologist") {
+        psychologistDetails = await Psychologist.findOne({ email: user.email });
+      }
+
       return successResponse(
         res,
         {
@@ -573,6 +625,7 @@ class UserController {
           questionnaireResponses,
           reports,
           supports,
+          psychologist: psychologistDetails,
         },
         "User details and all related data retrieved successfully"
       );
