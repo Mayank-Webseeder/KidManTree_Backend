@@ -706,4 +706,64 @@ router.delete(
   }
 );
 
+// get all slot of psychologists
+router.get("/:id/slots", async (req, res) => {
+  try {
+    const psychologist = await Psychologist.findOne({
+      _id: req.params.id,
+      isActive: true,
+      status: "selected",
+    }).select("name schedule");
+
+    if (!psychologist) {
+      return errorResponse(res, "Psychologist not found", 404);
+    }
+
+    const availableSlots = psychologist.schedule.filter(slot => slot.isAvailable);
+
+    return successResponse(res, {
+      psychologistId: psychologist._id,
+      psychologistName: psychologist.name,
+      totalSlots: psychologist.schedule.length,
+      availableSlotsCount: availableSlots.length,
+      slots: availableSlots,
+    });
+  } catch (error) {
+    logger.error("Get psychologist slots error:", error);
+    return errorResponse(res, "Failed to retrieve psychologist slots", 500);
+  }
+});
+
+// get slot by id of psychologists
+router.get("/:psychologistId/slots/:slotId", async (req, res) => {
+  try {
+    const { psychologistId, slotId } = req.params;
+
+    const psychologist = await Psychologist.findOne({
+      _id: psychologistId,
+      isActive: true,
+      status: "selected",
+    }).select("name schedule");
+
+    if (!psychologist) {
+      return errorResponse(res, "Psychologist not found", 404);
+    }
+
+    const slot = psychologist.schedule.id(slotId);
+
+    if (!slot) {
+      return errorResponse(res, "Slot not found", 404);
+    }
+
+    return successResponse(res, {
+      psychologistId: psychologist._id,
+      psychologistName: psychologist.name,
+      slot,
+    });
+  } catch (error) {
+    logger.error("Get psychologist slot by ID error:", error);
+    return errorResponse(res, "Failed to retrieve slot", 500);
+  }
+});
+
 module.exports = router;

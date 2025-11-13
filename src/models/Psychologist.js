@@ -170,7 +170,8 @@ const psychologistSchema = new mongoose.Schema(
 );
 
 psychologistSchema.virtual("averageRating").get(function () {
-  if (this.reviews.length === 0) return 0;
+  const reviews = this.reviews || [];
+  if (reviews.length === 0) return 0;
   const sum = this.reviews.reduce((acc, review) => acc + review.rating, 0);
   return Math.round((sum / this.reviews.length) * 10) / 10;
 });
