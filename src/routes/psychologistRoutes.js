@@ -29,6 +29,7 @@ router.get("/", async (req, res) => {
     }
 
     const psychologists = await Psychologist.find(query)
+      .populate("reviews.user", "name profile.avatar")
       .sort({ rating: -1, name: 1 })
       .limit(limit)
       .skip((page - 1) * limit);
