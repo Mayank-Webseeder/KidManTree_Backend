@@ -61,6 +61,7 @@ const moodLogSchema = Joi.object({
   scale: Joi.number().min(1).max(5).required(),
   emotions: Joi.array().items(Joi.string()).max(10).optional(),
   notes: Joi.string().max(1000).optional(),
+  triggers: Joi.array().items(Joi.string().max(50)).optional(),
 });
 
 const appointmentSchema = Joi.object({
