@@ -62,8 +62,8 @@ router.get('/mood', async (req, res) => {
       isDeleted: false
     }).sort({ logDate: -1 });
 
-    const currentStreak = this.calculateCurrentStreak(moodLogs);
-    const longestStreak = this.calculateLongestStreak(moodLogs);
+    const currentStreak = calculateCurrentStreak(moodLogs);
+    const longestStreak = calculateLongestStreak(moodLogs);
 
     // Emotion frequency
     const emotionFrequency = await MoodLog.aggregate([
@@ -96,7 +96,7 @@ router.get('/mood', async (req, res) => {
         longest: longestStreak
       },
       emotionFrequency,
-      insights: this.generateInsights(dailyMoods, emotionFrequency)
+      insights: generateInsights(dailyMoods, emotionFrequency)
     };
 
     return successResponse(res, { analytics }, 'Mood analytics retrieved successfully');
@@ -145,7 +145,7 @@ router.get('/weekly-assessment', async (req, res) => {
 });
 
 // Helper methods
-router.calculateCurrentStreak = (moodLogs) => {
+function calculateCurrentStreak(moodLogs) {
   if (moodLogs.length === 0) return 0;
   
   let streak = 1;
@@ -167,7 +167,7 @@ router.calculateCurrentStreak = (moodLogs) => {
   return streak;
 };
 
-router.calculateLongestStreak = (moodLogs) => {
+function calculateLongestStreak(moodLogs) {
   if (moodLogs.length === 0) return 0;
   
   let longestStreak = 1;
@@ -190,7 +190,7 @@ router.calculateLongestStreak = (moodLogs) => {
   return Math.max(longestStreak, currentStreak);
 };
 
-router.generateInsights = (dailyMoods, emotionFrequency) => {
+function generateInsights(dailyMoods, emotionFrequency) {
   const insights = [];
   
   if (dailyMoods.length > 0) {
