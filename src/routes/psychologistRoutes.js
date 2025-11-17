@@ -720,7 +720,9 @@ router.get("/:id/slots", async (req, res) => {
       return errorResponse(res, "Psychologist not found", 404);
     }
 
-    const availableSlots = psychologist.schedule.filter(slot => slot.isAvailable);
+    const availableSlots = psychologist.schedule.filter(
+      (slot) => slot.isAvailable
+    );
 
     return successResponse(res, {
       psychologistId: psychologist._id,
