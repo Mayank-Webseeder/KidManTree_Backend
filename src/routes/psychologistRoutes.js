@@ -433,13 +433,11 @@ router.put(
           // Generate strong temporary password
           const crypto = require("crypto");
           generatedPassword = `Kidman@${crypto.randomInt(100000, 999999)}`;
-          const bcrypt = require("bcrypt");
-          const hashedPassword = await bcrypt.hash(generatedPassword, 12);
 
           await User.create({
             name: psychologist.name,
             email: psychologist.email,
-            password: hashedPassword,
+            password: generatedPassword,
             contact: psychologist.contactNumber,
             age: 25,
             role: "psychologist",
@@ -556,13 +554,10 @@ router.post(
         );
       }
 
-      const bcrypt = require("bcrypt");
-      const hashedPassword = await bcrypt.hash(password, 12);
-
       const user = await User.create({
         name: fullName,
         email,
-        password: hashedPassword,
+        password,
         contact: contactNumber,
         age: 25,
         role: "psychologist",

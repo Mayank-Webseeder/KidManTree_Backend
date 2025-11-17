@@ -518,11 +518,13 @@ class AuthService {
       throw new Error('Admin user already exists with this email');
     }
 
+    const randomContact = "+100000" + Math.floor(100000 + Math.random() * 900000);
+
     const admin = new User({
       name: 'Admin User',
       email,
       password,
-      contact: '+1234567890', // Placeholder for admin
+      contact: randomContact, // Placeholder for admin
       age: 25,
       role,
       isEmailVerified: true,
@@ -533,7 +535,14 @@ class AuthService {
     await admin.save();
     logger.info(`Admin user created: ${email}`);
 
-    return admin.toSafeObject();
+    return {
+      id: admin._id,
+      name: admin.name,
+      email: admin.email,
+      role: admin.role,
+      isActive: admin.isActive,
+    };
+
   }
 
   async createPsychologistUser(email, password, psychologistData) {
