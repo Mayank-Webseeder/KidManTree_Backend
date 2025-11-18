@@ -341,6 +341,109 @@ router.put(
   }
 );
 
+const normalizeTime = (time) => {
+  time = time.trim().toUpperCase(); // "02:00 PM"
+
+  const [hourMin, ampm] = time.split(" ");
+  let [hour, minute] = hourMin.split(":").map(Number);
+
+  if (ampm === "PM" && hour !== 12) hour += 12;
+  if (ampm === "AM" && hour === 12) hour = 0;
+
+  return `${hour.toString().padStart(2, "0")}:${minute
+    .toString()
+    .padStart(2, "0")}`;
+};
+
+
+const timeToMinutes = (t) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+};
+
+const isOverlapping = (start1, end1, start2, end2) => {
+  return start1 < end2 && start2 < end1;
+};
+
+router.post(
+  "/profile/me/slots",
+  authenticate,
+  authorize("psychologist"),
+  async (req, res) => {
+    try {
+      let { dates, timeSlots, isAvailable = true } = req.body;
+
+      if (!Array.isArray(dates) || dates.length === 0) {
+        return errorResponse(res, "dates must be a non-empty array", 400);
+      }
+
+      if (!Array.isArray(timeSlots) || timeSlots.length === 0) {
+        return errorResponse(res, "timeSlots must be a non-empty array", 400);
+      }
+
+      // Normalize all times
+      timeSlots = timeSlots.map((slot) => ({
+        startTime: normalizeTime(slot.startTime),
+        endTime: normalizeTime(slot.endTime),
+      }));
+
+      const psychologist = await Psychologist.findOne({
+        email: req.user.email,
+      });
+
+      if (!psychologist) {
+        return errorResponse(res, "Psychologist profile not found", 404);
+      }
+
+      // Check overlap with existing slots
+      for (const date of dates) {
+        for (const newSlot of timeSlots) {
+          const startMin = timeToMinutes(newSlot.startTime);
+          const endMin = timeToMinutes(newSlot.endTime);
+
+          for (const slot of psychologist.schedule) {
+            if (slot.date === date) {
+              const s = timeToMinutes(slot.startTime);
+              const e = timeToMinutes(slot.endTime);
+
+              if (isOverlapping(startMin, endMin, s, e)) {
+                return errorResponse(
+                  res,
+                  `Overlap on ${date}: (${newSlot.startTime} - ${newSlot.endTime}) conflicts with existing slot (${slot.startTime} - ${slot.endTime})`,
+                  400
+                );
+              }
+            }
+          }
+        }
+      }
+
+      // Insert all dates × timeSlots combinations
+      for (const date of dates) {
+        for (const slot of timeSlots) {
+          psychologist.schedule.push({
+            date,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            isAvailable,
+          });
+        }
+      }
+
+      await psychologist.save();
+
+      return successResponse(
+        res,
+        { schedule: psychologist.schedule },
+        "Multiple slots added successfully"
+      );
+    } catch (error) {
+      console.error("Add schedule slot error:", error);
+      return errorResponse(res, "Failed to add schedule slot", 500);
+    }
+  }
+);
+
 // Admin routes for managing psychologists
 // Admin list of applications/profiles with filters
 router.get(

@@ -11,11 +11,12 @@ const logger = require('../utils/logger');
 const { v4: uuidv4 } = require('uuid');
 
 class AuthService {
-  async generateToken(user) {
+  async generateToken(user, roleId) {
     const payload = {
       id: user._id,
       email: user.email,
-      role: user.role
+      role: user.role,
+      roleId: roleId,
     };
 
     return jwt.sign(payload, jwtConfig.secret, {
@@ -91,7 +92,7 @@ class AuthService {
 
   async login(email, password) {
 
-    const user = await User.findOne({ email, isActive: true });
+    const user = await User.findOne({ email, isActive: true }).select("+password");
 
     if (!user) {
       console.log('User not found or inactive');
@@ -116,17 +117,53 @@ class AuthService {
       throw new Error('Parent consent required for users under 18');
     }
 
+    if (!user.isActive) {
+      return errorResponse(res, "Account is not active", 401);
+    }
+    let roleId = null;
+    let roleData = null;
+    try {
+      if (user.role === "psychologist") {
+        const Psychologist = require("../models/Psychologist");
+        roleData = await Psychologist.findOne({ email: user.email });
+        roleId = roleData?._id || null;
+      } else if (user.role === "admin" || user.role === "superadmin") {
+        const Admin = require("../models/Admin");
+        roleData = await Admin.findOne({ email: user.email });
+        roleId = roleData?._id || null;
+      } else if (user.role === "user-panel") {
+        const UserPanel = require("../models/UserPanel");
+        roleData = await UserPanel.findOne({ email: user.email });
+        roleId = roleData?._id || null;
+      }
+    } catch (roleError) {
+      logger.error(`Role fetch error for ${user.role}:`, roleError);
+    }
+
     user.lastLogin = new Date();
     await user.save();
 
-    const token = await this.generateToken(user);
+    const token = await this.generateToken(user, roleId);
 
+    let userObj = user.toObject();
+    delete userObj.password;
+
+    const responseData = {
+      token,
+      user: {
+        ...userObj,
+        roleId: roleId
+      }
+    };
+
+
+    if (roleData) {
+      responseData.roleData = roleData;
+    }
+    
     logger.info(`User logged in: ${email}`);
 
-    return {
-      token,
-      user: user
-    };
+    return responseData;
   }
 
   async sendContactOTP(pendingUser) {

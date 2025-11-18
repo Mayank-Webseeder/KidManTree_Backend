@@ -1,9 +1,8 @@
 const mongoose = require("mongoose");
 
 const scheduleSlotSchema = new mongoose.Schema({
-  day: {
-    type: String,
-    enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+  date: {
+    type: Date,
     required: true,
   },
   startTime: {
