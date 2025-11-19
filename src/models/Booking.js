@@ -44,6 +44,10 @@ const bookingSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    meetingLink: {
+      type: String,
+      trim: true,
+    },
     status: {
       type: String,
       enum: ["pending", "confirmed", "completed", "cancelled", "rescheduled"],

@@ -12,6 +12,20 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+const MEETING_LINK_TEMPLATE =
+  process.env.MEETING_LINK_TEMPLATE || "https://meet.jit.si/kidmantree-{id}";
+
+const generateMeetingLink = (bookingId) => {
+  const id = bookingId?.toString() || "";
+  if (MEETING_LINK_TEMPLATE.includes("{id}")) {
+    return MEETING_LINK_TEMPLATE.replace("{id}", id);
+  }
+  const base = MEETING_LINK_TEMPLATE.endsWith("/")
+    ? MEETING_LINK_TEMPLATE.slice(0, -1)
+    : MEETING_LINK_TEMPLATE;
+  return `${base}/${id}`;
+};
+
 class BookingController {
   // Create booking and Razorpay order
   async createBooking(req, res) {
@@ -50,7 +64,7 @@ class BookingController {
       // Verify slot availability
       const slotExists = psychologist.schedule.find(
         (s) =>
-          s.day === slotDay &&
+          new Date(s.date).toISOString().split("T")[0] === slotDate &&
           s.startTime === slotStartTime &&
           s.endTime === slotEndTime &&
           s.isAvailable
@@ -74,7 +88,7 @@ class BookingController {
       }
 
       // Create booking
-      const booking = await Booking.create({
+      const booking = new Booking({
         user: userId,
         psychologist: psychologistId,
         slotDate: new Date(slotDate),
@@ -86,6 +100,8 @@ class BookingController {
         status: "pending",
         paymentStatus: "pending",
       });
+      booking.meetingLink = generateMeetingLink(booking._id);
+      await booking.save();
 
       // Create Razorpay order
       const razorpayOrder = await razorpay.orders.create({

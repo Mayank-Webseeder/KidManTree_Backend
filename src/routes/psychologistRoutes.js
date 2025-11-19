@@ -1,9 +1,26 @@
 const express = require("express");
 const Psychologist = require("../models/Psychologist");
 const User = require("../models/User");
+const Booking = require("../models/Booking");
 const { authenticate, authorize } = require("../middlewares/auth");
 const { successResponse, errorResponse } = require("../utils/response");
 const logger = require("../utils/logger");
+
+const MEETING_LINK_TEMPLATE =
+  process.env.MEETING_LINK_TEMPLATE || "https://meet.jit.si/kidmantree-{id}";
+
+const getMeetingLink = (booking) => {
+  if (!booking) return "";
+  if (booking.meetingLink) return booking.meetingLink;
+  const id = booking._id?.toString() || "";
+  if (MEETING_LINK_TEMPLATE.includes("{id}")) {
+    return MEETING_LINK_TEMPLATE.replace("{id}", id);
+  }
+  const base = MEETING_LINK_TEMPLATE.endsWith("/")
+    ? MEETING_LINK_TEMPLATE.slice(0, -1)
+    : MEETING_LINK_TEMPLATE;
+  return `${base}/${id}`;
+};
 
 const router = express.Router();
 
@@ -866,5 +883,170 @@ router.get("/:psychologistId/slots/:slotId", async (req, res) => {
     return errorResponse(res, "Failed to retrieve slot", 500);
   }
 });
+
+// Get sessions for authenticated psychologist (Sessions page)
+router.get(
+  "/sessions/me",
+  authenticate,
+  authorize("psychologist"),
+  async (req, res) => {
+    try {
+      // Get psychologist by email
+      const psychologist = await Psychologist.findOne({
+        email: req.user.email,
+      });
+
+      if (!psychologist) {
+        return errorResponse(res, "Psychologist profile not found", 404);
+      }
+
+      // Get all bookings for this psychologist
+      const allBookings = await Booking.find({
+        psychologist: psychologist._id,
+      })
+        .populate("user", "name email profile.avatar")
+        .sort({ slotDate: 1, slotStartTime: 1 });
+
+      // Calculate summary statistics
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Upcoming sessions (confirmed status, not rescheduled, slotDate >= today)
+      const upcomingBookings = allBookings.filter(
+        (booking) =>
+          booking.status === "confirmed" &&
+          new Date(booking.slotDate) >= today
+      );
+
+      // Rescheduled sessions that are upcoming (for upcoming tab)
+      const upcomingRescheduledBookings = allBookings.filter(
+        (booking) =>
+          booking.status === "rescheduled" &&
+          new Date(booking.slotDate) >= today
+      );
+
+      // All upcoming (confirmed + rescheduled upcoming)
+      const allUpcomingBookings = [...upcomingBookings, ...upcomingRescheduledBookings];
+
+      const upcomingCount = allUpcomingBookings.length;
+      const upcomingPaid = allUpcomingBookings.filter(
+        (b) => b.paymentStatus === "paid"
+      ).length;
+      const upcomingFree = upcomingCount - upcomingPaid;
+
+      // Completed sessions
+      const completedBookings = allBookings.filter(
+        (booking) => booking.status === "completed"
+      );
+      const completedCount = completedBookings.length;
+
+      // All rescheduled sessions (both past and future)
+      const rescheduledBookings = allBookings.filter(
+        (booking) => booking.status === "rescheduled"
+      );
+      const rescheduledCount = rescheduledBookings.length;
+
+      // Calculate revenue from completed paid sessions (after 10% commission)
+      // Note: Based on UI, this might be for completed sessions, not rescheduled
+      const completedRevenue = completedBookings.reduce((sum, booking) => {
+        if (booking.paymentStatus === "paid") {
+          return sum + booking.sessionRate * 0.9; // 10% commission deducted
+        }
+        return sum;
+      }, 0);
+
+      // Format sessions for response
+      const formatSession = (booking) => {
+        const slotDate = new Date(booking.slotDate);
+        const dateStr = slotDate.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+
+        // Calculate duration in minutes
+        const startTime = booking.slotStartTime.split(":").map(Number);
+        const endTime = booking.slotEndTime.split(":").map(Number);
+        const startMinutes = startTime[0] * 60 + startTime[1];
+        const endMinutes = endTime[0] * 60 + endTime[1];
+        const duration = endMinutes - startMinutes;
+
+        // Format time (convert 24h to 12h with AM/PM)
+        const timeStr = (() => {
+          const [hours, minutes] = booking.slotStartTime.split(":").map(Number);
+          const period = hours >= 12 ? "PM" : "AM";
+          const displayHours = hours % 12 || 12;
+          return `${displayHours.toString().padStart(2, "0")}:${minutes
+            .toString()
+            .padStart(2, "0")} ${period}`;
+        })();
+
+        return {
+          _id: booking._id,
+          patient: {
+            _id: booking.user._id,
+            name: booking.user.name || "Unknown",
+            avatar: booking.user.profile?.avatar || null,
+            email: booking.user.email,
+          },
+          sessionType: "Video Call",
+          isVideoCall: true,
+          duration: duration,
+          durationText: `${duration} min`,
+          date: dateStr,
+          time: timeStr,
+          slotDate: booking.slotDate,
+          slotStartTime: booking.slotStartTime,
+          slotEndTime: booking.slotEndTime,
+          meetingLink: getMeetingLink(booking),
+          status: booking.status,
+          paymentStatus: booking.paymentStatus,
+          sessionStatus: booking.sessionStatus,
+          sessionRate: booking.sessionRate,
+          notes: booking.notes,
+          createdAt: booking.createdAt,
+        };
+      };
+
+      // Group sessions by status
+      const upcomingSessions = allUpcomingBookings.map(formatSession);
+      const completedSessions = completedBookings.map(formatSession);
+      const rescheduledSessions = rescheduledBookings.map(formatSession);
+
+      // Summary cards data
+      const summary = {
+        upcoming: {
+          count: upcomingCount,
+          paid: upcomingPaid,
+          free: upcomingFree,
+        },
+        completed: {
+          count: completedCount,
+        },
+        rescheduled: {
+          count: rescheduledCount,
+          revenue: Math.round(completedRevenue), // Revenue from completed sessions after commission
+        },
+      };
+
+      return successResponse(res, {
+        summary,
+        sessions: {
+          upcoming: upcomingSessions,
+          completed: completedSessions,
+          rescheduled: rescheduledSessions,
+        },
+        counts: {
+          upcoming: upcomingSessions.length,
+          completed: completedSessions.length,
+          rescheduled: rescheduledSessions.length,
+        },
+      });
+    } catch (error) {
+      logger.error("Get psychologist sessions error:", error);
+      return errorResponse(res, "Failed to retrieve sessions", 500);
+    }
+  }
+);
 
 module.exports = router;
