@@ -122,7 +122,7 @@ class BookingController {
       const populatedBooking = await Booking.findById(booking._id)
         .populate(
           "psychologist",
-          "name firstName lastName specializations rating"
+          "name firstName lastName specializations rating averageRating profileImage"
         )
         .populate("user", "name email contact");
 
@@ -193,7 +193,10 @@ class BookingController {
         },
         { new: true }
       )
-        .populate("psychologist", "name firstName lastName specializations")
+        .populate(
+          "psychologist",
+          "name firstName lastName specializations rating averageRating profileImage"
+        )
         .populate("user", "name email contact");
 
       if (!booking) {
@@ -292,7 +295,7 @@ class BookingController {
       const booking = await Booking.findById(id)
         .populate(
           "psychologist",
-          "name firstName lastName specializations rating profileImage contact"
+          "name firstName lastName specializations rating averageRating profileImage contact"
         )
         .populate("user", "name email contact profile.avatar");
 
@@ -328,7 +331,10 @@ class BookingController {
         new: true,
         runValidators: true,
       })
-        .populate("psychologist", "name firstName lastName specializations")
+        .populate(
+          "psychologist",
+          "name firstName lastName specializations rating averageRating profileImage"
+        )
         .populate("user", "name email contact");
 
       if (!booking) {
@@ -405,7 +411,13 @@ class BookingController {
   async rescheduleBooking(req, res) {
     try {
       const { id } = req.params;
-      const { slotDate, slotDay, slotStartTime, slotEndTime } = req.body;
+      const {
+        slotDate,
+        slotDay,
+        slotStartTime,
+        slotEndTime,
+        rescheduleReason,
+      } = req.body;
       const userId = req.user.id;
 
       if (!slotDate || !slotDay || !slotStartTime || !slotEndTime) {
@@ -442,7 +454,8 @@ class BookingController {
       const psychologist = await Psychologist.findById(booking.psychologist);
       const slotExists = psychologist.schedule.find(
         (s) =>
-          s.day === slotDay &&
+          s.date &&
+          new Date(s.date).toISOString().split("T")[0] === slotDate &&
           s.startTime === slotStartTime &&
           s.endTime === slotEndTime &&
           s.isAvailable
@@ -472,11 +485,17 @@ class BookingController {
       booking.slotStartTime = slotStartTime;
       booking.slotEndTime = slotEndTime;
       booking.status = "rescheduled";
+       if (rescheduleReason) {
+        booking.rescheduleReason = rescheduleReason;
+      }
 
       await booking.save();
 
       const populatedBooking = await Booking.findById(booking._id)
-        .populate("psychologist", "name firstName lastName specializations")
+        .populate(
+          "psychologist",
+          "name firstName lastName specializations rating averageRating profileImage"
+        )
         .populate("user", "name email contact");
 
       return successResponse(
@@ -527,7 +546,10 @@ class BookingController {
       await booking.save();
 
       const populatedBooking = await Booking.findById(booking._id)
-        .populate("psychologist", "name firstName lastName")
+        .populate(
+          "psychologist",
+          "name firstName lastName specializations rating averageRating profileImage"
+        )
         .populate("user", "name email");
 
       return successResponse(
@@ -578,7 +600,7 @@ class BookingController {
       const bookings = await Booking.find(query)
         .populate(
           "psychologist",
-          "name firstName lastName specializations role"
+          "name firstName lastName specializations role rating averageRating profileImage"
         )
         .populate("user", "name email contact")
         .sort({ createdAt: -1 })

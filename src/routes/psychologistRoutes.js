@@ -1004,6 +1004,9 @@ router.get(
           sessionStatus: booking.sessionStatus,
           sessionRate: booking.sessionRate,
           notes: booking.notes,
+          rescheduleReason: booking.rescheduleReason || null,
+          rating: booking.rating || null,
+          feedback: booking.feedback || null,
           createdAt: booking.createdAt,
         };
       };

@@ -80,6 +80,10 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       maxlength: 500,
     },
+    rescheduleReason: {
+      type: String,
+      maxlength: 500,
+    },
     cancellationReason: {
       type: String,
     },
@@ -89,6 +93,15 @@ const bookingSchema = new mongoose.Schema(
     },
     cancelledAt: {
       type: Date,
+    },
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5,
+    },
+    feedback: {
+      type: String,
+      maxlength: 1000,
     },
     rescheduledFrom: {
       type: mongoose.Schema.Types.ObjectId,
