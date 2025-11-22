@@ -44,6 +44,18 @@ router.put(
   authorize("psychologist", "admin", "superadmin"),
   bookingController.updateSessionStatus
 );
+router.put(
+  "/:id/meeting-link",
+  authenticate,
+  authorize("psychologist", "admin", "superadmin"),
+  bookingController.updateMeetingLink
+);
+router.post(
+  "/:id/send-meeting-link",
+  authenticate,
+  authorize("psychologist", "admin", "superadmin"),
+  bookingController.sendMeetingLink
+);
 
 // Admin routes
 router.get(

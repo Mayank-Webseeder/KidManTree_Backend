@@ -13,20 +13,6 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-const MEETING_LINK_TEMPLATE =
-  process.env.MEETING_LINK_TEMPLATE || "https://meet.jit.si/kidmantree-{id}";
-
-const generateMeetingLink = (bookingId) => {
-  const id = bookingId?.toString() || "";
-  if (MEETING_LINK_TEMPLATE.includes("{id}")) {
-    return MEETING_LINK_TEMPLATE.replace("{id}", id);
-  }
-  const base = MEETING_LINK_TEMPLATE.endsWith("/")
-    ? MEETING_LINK_TEMPLATE.slice(0, -1)
-    : MEETING_LINK_TEMPLATE;
-  return `${base}/${id}`;
-};
-
 const formatSlotDetails = (slotDate, slotStartTime) => {
   const date = new Date(slotDate);
   const dateStr = date.toLocaleDateString("en-IN", {
@@ -115,7 +101,6 @@ class BookingController {
         status: "pending",
         paymentStatus: "pending",
       });
-      booking.meetingLink = generateMeetingLink(booking._id);
       await booking.save();
 
       // Create Razorpay order
@@ -231,29 +216,38 @@ class BookingController {
       await notificationService.createNotification({
         user: booking.psychologist._id,
         title: "Session scheduled",
-        description: `${
-          booking.user.name || "New patient"
-        } booked a session on ${dateStr} at ${timeStr}.`,
+        description: `${booking.user.name || "New patient"
+          } booked a session on ${dateStr} at ${timeStr}.`,
         type: "session",
         priority: "high",
         metadata: {
           bookingId: booking._id,
           slotDate: booking.slotDate,
           slotStartTime: booking.slotStartTime,
+          ...(booking.meetingLink && { meetingLink: booking.meetingLink }),
         },
       });
+
+      let paymentDescription = `Your session with ${booking.psychologist.name} is confirmed for ${dateStr} at ${timeStr}.`;
+      if (booking.meetingLink) {
+        paymentDescription += ` Meeting link: ${booking.meetingLink}`;
+      }
+
+      const paymentMetadata = {
+        bookingId: booking._id,
+        amount: booking.sessionRate,
+      };
+      if (booking.meetingLink) {
+        paymentMetadata.meetingLink = booking.meetingLink;
+      }
 
       await notificationService.createNotification({
         user: booking.user._id,
         title: "Payment received",
-        description: `Your session with ${
-          booking.psychologist.name
-        } is confirmed for ${dateStr} at ${timeStr}.`,
+        description: paymentDescription,
         type: "payment",
-        metadata: {
-          bookingId: booking._id,
-          amount: booking.sessionRate,
-        },
+        priority: "high",
+        metadata: paymentMetadata,
       });
 
       return successResponse(
@@ -432,8 +426,8 @@ class BookingController {
       booking.cancelledBy = isAdmin
         ? "admin"
         : isPsychologist
-        ? "psychologist"
-        : "user";
+          ? "psychologist"
+          : "user";
       booking.cancelledAt = new Date();
 
       // Handle refund if payment was made
@@ -554,9 +548,8 @@ class BookingController {
       await notificationService.createNotification({
         user: populatedBooking.psychologist._id,
         title: "Session rescheduled",
-        description: `${
-          populatedBooking.user.name || "Patient"
-        } moved the session to ${dateStr} at ${timeStr}.`,
+        description: `${populatedBooking.user.name || "Patient"
+          } moved the session to ${dateStr} at ${timeStr}.`,
         type: "session",
         metadata: {
           bookingId: populatedBooking._id,
@@ -567,9 +560,8 @@ class BookingController {
       await notificationService.createNotification({
         user: populatedBooking.user._id,
         title: "Session updated",
-        description: `Your session with ${
-          populatedBooking.psychologist.name
-        } is now scheduled for ${dateStr} at ${timeStr}.`,
+        description: `Your session with ${populatedBooking.psychologist.name
+          } is now scheduled for ${dateStr} at ${timeStr}.`,
         type: "session",
         metadata: {
           bookingId: populatedBooking._id,
@@ -698,6 +690,147 @@ class BookingController {
     } catch (error) {
       logger.error("Get all bookings error:", error);
       return errorResponse(res, "Failed to retrieve bookings", 500);
+    }
+  }
+
+  // Update meeting link (admin/superadmin/psychologist)
+  async updateMeetingLink(req, res) {
+    try {
+      const { id } = req.params;
+      const { meetingLink } = req.body;
+      const userRole = req.user.role;
+
+      if (!meetingLink) {
+        return errorResponse(res, "Meeting link is required", 400);
+      }
+
+      const booking = await Booking.findById(id)
+        .populate("psychologist", "name email rating")
+        .populate("user", "name email");
+
+      if (!booking) {
+        return errorResponse(res, "Booking not found", 404);
+      }
+
+      // Check authorization
+      const isPsychologist =
+        userRole === "psychologist" &&
+        booking.psychologist._id.toString() === req.user.id;
+      const isAdmin = ["admin", "superadmin"].includes(userRole);
+
+      if (!isPsychologist && !isAdmin) {
+        return errorResponse(
+          res,
+          "Unauthorized to update meeting link",
+          403
+        );
+      }
+
+      booking.meetingLink = meetingLink;
+      await booking.save();
+
+      const populatedBooking = await Booking.findById(booking._id)
+        .populate("psychologist", "name email rating")
+        .populate("user", "name email");
+
+      return successResponse(
+        res,
+        { booking: populatedBooking },
+        "Meeting link updated successfully"
+      );
+    } catch (error) {
+      logger.error("Update meeting link error:", error);
+      return errorResponse(res, "Failed to update meeting link", 500);
+    }
+  }
+
+  // Send meeting link notification (admin/superadmin/psychologist)
+  async sendMeetingLink(req, res) {
+    try {
+      const { id } = req.params;
+      const { meetingLink } = req.body;
+      const userRole = req.user.role;
+
+      const booking = await Booking.findById(id)
+        .populate("psychologist", "name email rating")
+        .populate("user", "name email");
+
+      if (!booking) {
+        return errorResponse(res, "Booking not found", 404);
+      }
+
+      // Check authorization
+      const isPsychologist =
+        userRole === "psychologist" &&
+        booking.psychologist._id.toString() === req.user.id;
+      const isAdmin = ["admin", "superadmin"].includes(userRole);
+
+      if (!isPsychologist && !isAdmin) {
+        return errorResponse(
+          res,
+          "Unauthorized to send meeting link",
+          403
+        );
+      }
+
+      if (meetingLink) {
+        booking.meetingLink = meetingLink;
+        await booking.save();
+      }
+
+      if (!booking.meetingLink) {
+        return errorResponse(
+          res,
+          "Meeting link is required. Please provide it in the request body or update it first.",
+          400
+        );
+      }
+
+      const { dateStr, timeStr } = formatSlotDetails(
+        booking.slotDate,
+        booking.slotStartTime
+      );
+
+      // Send notification to patient
+      await notificationService.createNotification({
+        user: booking.user._id,
+        title: "Meeting link sent",
+        description: `Your session with ${booking.psychologist.name} on ${dateStr} at ${timeStr}. Meeting link: ${booking.meetingLink}`,
+        type: "session",
+        priority: "high",
+        metadata: {
+          bookingId: booking._id,
+          meetingLink: booking.meetingLink,
+          slotDate: booking.slotDate,
+          slotStartTime: booking.slotStartTime,
+        },
+      });
+
+      // Send notification to psychologist
+      await notificationService.createNotification({
+        user: booking.psychologist._id,
+        title: "Meeting link sent to patient",
+        description: `Meeting link for session with ${booking.user.name} on ${dateStr} at ${timeStr} has been sent.`,
+        type: "session",
+        priority: "normal",
+        metadata: {
+          bookingId: booking._id,
+          meetingLink: booking.meetingLink,
+        },
+      });
+
+      const populatedBooking = await Booking.findById(booking._id)
+        .populate("psychologist", "name email rating")
+        .populate("user", "name email");
+
+      return successResponse(
+        res,
+        { booking: populatedBooking },
+        "Meeting link sent successfully"
+      );
+    } catch (error) {
+      logger.error("Send meeting link error:", error);
+      return errorResponse(res, "Failed to send meeting link", 500);
     }
   }
 }

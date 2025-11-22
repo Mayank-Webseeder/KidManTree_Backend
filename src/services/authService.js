@@ -129,9 +129,8 @@ class AuthService {
         roleData = await Psychologist.findOne({ email: user.email });
         roleId = roleData?._id || null;
       } else if (user.role === "admin" || user.role === "superadmin") {
-        const Admin = require("../models/Admin");
-        roleData = await Admin.findOne({ email: user.email });
-        roleId = roleData?._id || null;
+        roleData = null;
+        roleId = null;
       } else if (user.role === "user-panel") {
         const UserPanel = require("../models/UserPanel");
         roleData = await UserPanel.findOne({ email: user.email });

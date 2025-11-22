@@ -6,20 +6,9 @@ const { authenticate, authorize } = require("../middlewares/auth");
 const { successResponse, errorResponse } = require("../utils/response");
 const logger = require("../utils/logger");
 
-const MEETING_LINK_TEMPLATE =
-  process.env.MEETING_LINK_TEMPLATE || "https://meet.jit.si/kidmantree-{id}";
-
 const getMeetingLink = (booking) => {
-  if (!booking) return "";
-  if (booking.meetingLink) return booking.meetingLink;
-  const id = booking._id?.toString() || "";
-  if (MEETING_LINK_TEMPLATE.includes("{id}")) {
-    return MEETING_LINK_TEMPLATE.replace("{id}", id);
-  }
-  const base = MEETING_LINK_TEMPLATE.endsWith("/")
-    ? MEETING_LINK_TEMPLATE.slice(0, -1)
-    : MEETING_LINK_TEMPLATE;
-  return `${base}/${id}`;
+  if (!booking) return null;
+  return booking.meetingLink || null;
 };
 
 const router = express.Router();
