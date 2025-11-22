@@ -5,6 +5,7 @@ const app = require("./app");
 const { connectDB } = require("./src/loaders/database");
 const logger = require("./src/utils/logger");
 const { createUploadsDirectories } = require("./scripts/setup-uploads");
+const { initSocket } = require("./src/socket");
 
 const PORT = process.env.PORT || 8000;
 
@@ -23,6 +24,8 @@ async function startServer() {
         `📚 API Documentation available at http://localhost:${PORT}/docs`
       );
     });
+
+    initSocket(server);
 
     // Graceful shutdown
     process.on("SIGINT", async () => {

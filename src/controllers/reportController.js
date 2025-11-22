@@ -1,5 +1,7 @@
 const { Report, REPORT_STATUSES } = require("../models/Report");
 const { successResponse, errorResponse } = require("../utils/response");
+const notificationEvents = require("../services/notificationEvents");
+const logger = require("../utils/logger");
 
 class ReportController {
   async create(req, res) {
@@ -14,6 +16,10 @@ class ReportController {
         title,
         description,
       });
+
+      notificationEvents.reportSubmitted(report, req.user).catch((error) =>
+        logger.warn("Report notification error:", error.message)
+      );
 
       return successResponse(res, report, "Report submitted", 201);
     } catch (err) {

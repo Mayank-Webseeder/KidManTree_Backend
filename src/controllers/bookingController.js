@@ -5,6 +5,7 @@ const { successResponse, errorResponse } = require("../utils/response");
 const logger = require("../utils/logger");
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
+const notificationService = require("../services/notificationService");
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
@@ -24,6 +25,20 @@ const generateMeetingLink = (bookingId) => {
     ? MEETING_LINK_TEMPLATE.slice(0, -1)
     : MEETING_LINK_TEMPLATE;
   return `${base}/${id}`;
+};
+
+const formatSlotDetails = (slotDate, slotStartTime) => {
+  const date = new Date(slotDate);
+  const dateStr = date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  const [hour, minute] = slotStartTime.split(":").map(Number);
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = ((hour + 11) % 12) + 1;
+  const timeStr = `${displayHour}:${minute.toString().padStart(2, "0")} ${period}`;
+  return { dateStr, timeStr };
 };
 
 class BookingController {
@@ -206,6 +221,39 @@ class BookingController {
       // Increment psychologist's total sessions
       await Psychologist.findByIdAndUpdate(booking.psychologist._id, {
         $inc: { totalSessions: 1 },
+      });
+
+      const { dateStr, timeStr } = formatSlotDetails(
+        booking.slotDate,
+        booking.slotStartTime
+      );
+
+      await notificationService.createNotification({
+        user: booking.psychologist._id,
+        title: "Session scheduled",
+        description: `${
+          booking.user.name || "New patient"
+        } booked a session on ${dateStr} at ${timeStr}.`,
+        type: "session",
+        priority: "high",
+        metadata: {
+          bookingId: booking._id,
+          slotDate: booking.slotDate,
+          slotStartTime: booking.slotStartTime,
+        },
+      });
+
+      await notificationService.createNotification({
+        user: booking.user._id,
+        title: "Payment received",
+        description: `Your session with ${
+          booking.psychologist.name
+        } is confirmed for ${dateStr} at ${timeStr}.`,
+        type: "payment",
+        metadata: {
+          bookingId: booking._id,
+          amount: booking.sessionRate,
+        },
       });
 
       return successResponse(
@@ -485,7 +533,7 @@ class BookingController {
       booking.slotStartTime = slotStartTime;
       booking.slotEndTime = slotEndTime;
       booking.status = "rescheduled";
-       if (rescheduleReason) {
+      if (rescheduleReason) {
         booking.rescheduleReason = rescheduleReason;
       }
 
@@ -497,6 +545,36 @@ class BookingController {
           "name firstName lastName specializations rating averageRating profileImage"
         )
         .populate("user", "name email contact");
+
+      const { dateStr, timeStr } = formatSlotDetails(
+        booking.slotDate,
+        booking.slotStartTime
+      );
+
+      await notificationService.createNotification({
+        user: populatedBooking.psychologist._id,
+        title: "Session rescheduled",
+        description: `${
+          populatedBooking.user.name || "Patient"
+        } moved the session to ${dateStr} at ${timeStr}.`,
+        type: "session",
+        metadata: {
+          bookingId: populatedBooking._id,
+          rescheduleReason: booking.rescheduleReason,
+        },
+      });
+
+      await notificationService.createNotification({
+        user: populatedBooking.user._id,
+        title: "Session updated",
+        description: `Your session with ${
+          populatedBooking.psychologist.name
+        } is now scheduled for ${dateStr} at ${timeStr}.`,
+        type: "session",
+        metadata: {
+          bookingId: populatedBooking._id,
+        },
+      });
 
       return successResponse(
         res,

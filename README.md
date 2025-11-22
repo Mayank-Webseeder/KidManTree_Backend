@@ -206,6 +206,7 @@ Key environment variables (see `.env.example`):
 - `EMAIL_USER/EMAIL_PASS`: Email service credentials
 - `TWILIO_*`: SMS service configuration
 - `ADMIN_EMAIL/ADMIN_PASSWORD`: Default admin credentials
+- `CLIENT_URL`: Comma-separated list of allowed frontend origins for Socket.IO (e.g. `http://localhost:3000`)
 
 ## 🧪 Development
 

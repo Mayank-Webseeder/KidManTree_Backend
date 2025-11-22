@@ -9,6 +9,7 @@ const smsService = require('./smsService');
 const { generateOTP, generateOTPExpiry } = require('../utils/otpGenerator');
 const logger = require('../utils/logger');
 const { v4: uuidv4 } = require('uuid');
+const notificationEvents = require('./notificationEvents');
 
 class AuthService {
   async generateToken(user, roleId) {
@@ -283,6 +284,15 @@ class AuthService {
 
       const user = new User(userDoc);
       await user.save();
+
+      notificationEvents
+        .newPatientOnboarded(user)
+        .catch((eventError) =>
+          logger.warn(
+            "Failed to send onboarding notifications:",
+            eventError.message
+          )
+        );
 
       // Clean up pending user
       await PendingUser.deleteOne({ _id: pendingUser._id });

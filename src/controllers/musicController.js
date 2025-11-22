@@ -5,6 +5,7 @@ const Music = require("../models/Music");
 const { successResponse, errorResponse } = require("../utils/response");
 const logger = require("../utils/logger");
 const { getThumbnailUrl, getAudioUrl } = require("../utils/fileUrl");
+const notificationEvents = require("../services/notificationEvents");
 
 class MusicController {
   // Categories
@@ -196,6 +197,12 @@ class MusicController {
         audioUrl: getAudioUrl(track.audioPath),
       };
 
+      notificationEvents
+        .meditationPublished(trackWithUrl)
+        .catch((error) =>
+          logger.warn("Meditation notification error:", error.message)
+        );
+
       return successResponse(
         res,
         { music: trackWithUrl },
@@ -244,6 +251,17 @@ class MusicController {
         ...track.toObject(),
         audioUrl: getAudioUrl(track.audioPath),
       }));
+
+      if (tracksWithUrls.length) {
+        notificationEvents
+          .meditationPublished({
+            ...tracksWithUrls[0],
+            title: `${tracksWithUrls.length} new sessions`,
+          })
+          .catch((error) =>
+            logger.warn("Bulk meditation notification error:", error.message)
+          );
+      }
 
       return successResponse(
         res,

@@ -412,6 +412,7 @@
 const Support = require("../models/Support");
 const { successResponse, errorResponse } = require("../utils/response");
 const logger = require("../utils/logger");
+const notificationEvents = require("../services/notificationEvents");
 
 class SupportController {
   async createSupport(req, res) {
@@ -429,6 +430,12 @@ class SupportController {
       });
 
       await support.populate("createdBy", "name email");
+
+      notificationEvents
+        .supportTicketCreated(support, support.createdBy)
+        .catch((error) =>
+          logger.warn("Support notification error:", error.message)
+        );
 
       return successResponse(
         res,
