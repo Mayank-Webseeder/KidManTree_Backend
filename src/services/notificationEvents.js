@@ -201,6 +201,19 @@ const notificationEvents = {
       });
     }, "community suggestion broadcast");
   },
+
+  async passwordChanged(user) {
+    if (!user?._id) return;
+    await safeExec(async () => {
+      await notificationService.createNotification({
+        user: user._id,
+        title: "Password Changed",
+        description: "Your password was successfully changed. If this wasn't you, please contact support immediately.",
+        type: "system",
+        priority: "high",
+      });
+    }, "password changed notification");
+  },
 };
 
 module.exports = notificationEvents;

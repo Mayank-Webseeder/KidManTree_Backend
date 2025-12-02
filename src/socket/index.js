@@ -27,8 +27,16 @@ const initSocket = (httpServer) => {
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      socket.user = { id: decoded.id, role: decoded.role };
-      socket.join(`user:${decoded.id}`);
+      // Use roleId for psychologists, userId for others
+      let userIdentifier = decoded.id;
+      if (decoded.role === 'psychologist' && decoded.roleId) {
+        userIdentifier = decoded.roleId;
+      }
+      socket.user = { id: userIdentifier, role: decoded.role };
+      socket.join(`user:${userIdentifier}`);
+      if (decoded.id && decoded.id !== userIdentifier) {
+        socket.join(`user:${decoded.id}`);
+      }
       return next();
     } catch (error) {
       logger.warn("Socket auth failed:", error.message);

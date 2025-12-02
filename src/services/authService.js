@@ -673,6 +673,11 @@ class AuthService {
 
     logger.info(`Password reset completed for: ${user.email}`);
 
+    // Trigger notification
+    notificationEvents.passwordChanged(user).catch(err =>
+      logger.warn(`Failed to send password reset notification: ${err.message}`)
+    );
+
     return {
       success: true,
       message: 'Password has been reset successfully'
@@ -703,6 +708,11 @@ class AuthService {
     });
 
     logger.info(`Password changed for user: ${user.email}`);
+
+    // Trigger notification
+    notificationEvents.passwordChanged(user).catch(err =>
+      logger.warn(`Failed to send password change notification: ${err.message}`)
+    );
 
     return {
       success: true,
@@ -802,6 +812,11 @@ class AuthService {
     });
 
     logger.info(`Password reset successfully for: ${email}`);
+
+    // Trigger notification
+    notificationEvents.passwordChanged(user).catch(err =>
+      logger.warn(`Failed to send password reset notification: ${err.message}`)
+    );
 
     return {
       success: true,

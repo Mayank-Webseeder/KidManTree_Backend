@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const dbConfig = require('../config/database');
 const logger = require('../utils/logger');
+const colors = require("colors");
 
 const connectDB = async () => {
   try {
@@ -13,7 +14,7 @@ const connectDB = async () => {
 
     const conn = await mongoose.connect(config.url, config.options);
     
-    logger.info(`✅ MongoDB connected: ${conn.connection.host}`);
+    logger.info(`✅ MongoDB connected: ${conn.connection.host}`.bgBlue.white.bold);
     
     mongoose.connection.on('error', (error) => {
       logger.error('MongoDB connection error:', error);
@@ -24,7 +25,7 @@ const connectDB = async () => {
     });
 
   } catch (error) {
-    logger.error('❌ MongoDB connection failed:', error.message);
+    logger.error(`❌ MongoDB connection failed: ${error.message}`.bgRed);
     process.exit(1);
   }
 };

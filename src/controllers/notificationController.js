@@ -6,7 +6,12 @@ class NotificationController {
   async getNotifications(req, res) {
     try {
       const { page = 1, limit = 10, unread } = req.query;
-      const query = { user: req.user.id };
+
+      const userId = req.user.role === 'psychologist' && req.roleId
+        ? req.roleId
+        : req.user.id;
+
+      const query = { user: userId };
       if (unread === "true") {
         query.isRead = false;
       }
@@ -18,7 +23,7 @@ class NotificationController {
 
       const total = await Notification.countDocuments(query);
       const unreadCount = await Notification.countDocuments({
-        user: req.user.id,
+        user: userId,
         isRead: false,
       });
 
@@ -39,8 +44,12 @@ class NotificationController {
 
   async markAsRead(req, res) {
     try {
+      const userId = req.user.role === 'psychologist' && req.roleId
+        ? req.roleId
+        : req.user.id;
+
       const notification = await Notification.findOneAndUpdate(
-        { _id: req.params.id, user: req.user.id },
+        { _id: req.params.id, user: userId },
         { isRead: true },
         { new: true }
       );
@@ -58,8 +67,12 @@ class NotificationController {
 
   async markAllAsRead(req, res) {
     try {
+      const userId = req.user.role === 'psychologist' && req.roleId
+        ? req.roleId
+        : req.user.id;
+
       await Notification.updateMany(
-        { user: req.user.id, isRead: false },
+        { user: userId, isRead: false },
         { isRead: true }
       );
 

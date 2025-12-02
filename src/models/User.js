@@ -123,11 +123,16 @@ const userSchema = new mongoose.Schema(
 userSchema.index({ tempToken: 1 }, { sparse: true });
 
 userSchema.methods.comparePassword = async function (enteredPassword) {
-return bcrypt.compare(enteredPassword, this.password);
+  return bcrypt.compare(enteredPassword, this.password);
 };
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
+
+  // Check if the password is already a bcrypt hash
+  if (typeof this.password === 'string' && /^\$2[aby]\$/.test(this.password)) {
+    return next();
+  }
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);

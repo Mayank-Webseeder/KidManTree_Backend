@@ -22,6 +22,7 @@ const authenticate = async (req, res, next) => {
     }
 
     req.user = user;
+    req.roleId = decoded.roleId;
     next();
   } catch (error) {
     logger.error('Authentication error:', error);
