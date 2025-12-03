@@ -205,8 +205,18 @@ const notificationEvents = {
   async passwordChanged(user) {
     if (!user?._id) return;
     await safeExec(async () => {
+      let notificationUserId = user._id;
+
+      if (user.role === 'psychologist') {
+        const Psychologist = require("../models/Psychologist");
+        const psychologistData = await Psychologist.findOne({ email: user.email });
+        if (psychologistData?._id) {
+          notificationUserId = psychologistData._id;
+        }
+      }
+
       await notificationService.createNotification({
-        user: user._id,
+        user: notificationUserId,
         title: "Password Changed",
         description: "Your password was successfully changed. If this wasn't you, please contact support immediately.",
         type: "system",
