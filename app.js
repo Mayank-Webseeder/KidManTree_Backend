@@ -75,8 +75,9 @@ app.use(
   })
 );
 
-// Static file serving for uploads
+// Static file serving for uploads and public assets
 app.use("/uploads", express.static("uploads"));
+app.use("/public", express.static("public"));
 
 // API routes
 app.use("/api", routes);

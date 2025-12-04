@@ -1,7 +1,7 @@
 {
   "name": "kidmantree-backend",
   "version": "1.0.0",
-  "description": "Backend API for KidManTree mental health platform",
+  "description": "Backend API for Manmitr",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

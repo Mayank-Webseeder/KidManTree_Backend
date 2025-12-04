@@ -1,4 +1,4 @@
-# Mental Health Platform Backend
+# Manmitr Backend
 
 A comprehensive Node.js + Express backend API for a mental health and content platform with user management, mood tracking, social features, and psychologist appointments.
 

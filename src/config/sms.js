@@ -6,7 +6,7 @@ const smsConfig = {
     from: process.env.TWILIO_FROM
   },
   templates: {
-    otpMessage: 'Your Mental Health Platform verification code is: {otp}. Valid for 10 minutes.'
+    otpMessage: 'Your Manmitr verification code is: {otp}. Valid for 10 minutes.'
   }
 };
 
