@@ -79,6 +79,30 @@ class ReelController {
     }
   }
 
+  async getReelById(req, res) {
+    try {
+      const { id } = req.params;
+
+      const reel = await Reel.findById(id).populate("createdBy", "name email");
+
+      if (!reel) return errorResponse(res, "Reel not found", 404);
+
+      const withUrl = {
+        ...reel.toObject(),
+        videoUrl: getVideoUrl(reel.videoPath),
+      };
+
+      return successResponse(
+        res,
+        { reel: withUrl },
+        "Reel retrieved successfully"
+      );
+    } catch (error) {
+      logger.error("Get reel by id error:", error);
+      return errorResponse(res, "Failed to retrieve reel", 500);
+    }
+  }
+
   async deleteReel(req, res) {
     try {
       const { id } = req.params;

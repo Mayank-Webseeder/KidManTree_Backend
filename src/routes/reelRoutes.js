@@ -35,6 +35,7 @@ const uploadVideo = multer({
 
 // Public routes
 router.get("/", reelController.listReels);
+router.get("/:id", reelController.getReelById);
 router.post("/:id/like", authenticate, reelController.likeReel);
 
 // Admin/Superadmin - reels

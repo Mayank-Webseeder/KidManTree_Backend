@@ -6,6 +6,7 @@ const logger = require("../utils/logger");
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const notificationService = require("../services/notificationService");
+const emailService = require("../services/emailService");
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
@@ -249,6 +250,24 @@ class BookingController {
         priority: "high",
         metadata: paymentMetadata,
       });
+
+      // Send booking confirmation email to user
+      try {
+        await emailService.sendBookingConfirmationEmail(
+          booking.user.email,
+          booking.user.name,
+          booking.psychologist.name,
+          booking.slotDate,
+          booking.slotStartTime,
+          booking.slotEndTime,
+          booking.meetingLink || null,
+          booking.sessionRate || null
+        );
+        logger.info(`Booking confirmation email sent to ${booking.user.email}`);
+      } catch (emailError) {
+        logger.error("Failed to send booking confirmation email:", emailError);
+        // Don't fail the request if email fails
+      }
 
       return successResponse(
         res,

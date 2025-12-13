@@ -5,6 +5,7 @@ const Booking = require("../models/Booking");
 const { authenticate, authorize } = require("../middlewares/auth");
 const { successResponse, errorResponse } = require("../utils/response");
 const logger = require("../utils/logger");
+const emailService = require("../services/emailService");
 
 const getMeetingLink = (booking) => {
   if (!booking) return null;
@@ -360,7 +361,6 @@ const normalizeTime = (time) => {
     .toString()
     .padStart(2, "0")}`;
 };
-
 
 const timeToMinutes = (t) => {
   const [h, m] = t.split(":").map(Number);
@@ -903,8 +903,7 @@ router.get(
       // Upcoming sessions (confirmed status, not rescheduled, slotDate >= today)
       const upcomingBookings = allBookings.filter(
         (booking) =>
-          booking.status === "confirmed" &&
-          new Date(booking.slotDate) >= today
+          booking.status === "confirmed" && new Date(booking.slotDate) >= today
       );
 
       // Rescheduled sessions that are upcoming (for upcoming tab)
@@ -915,7 +914,10 @@ router.get(
       );
 
       // All upcoming (confirmed + rescheduled upcoming)
-      const allUpcomingBookings = [...upcomingBookings, ...upcomingRescheduledBookings];
+      const allUpcomingBookings = [
+        ...upcomingBookings,
+        ...upcomingRescheduledBookings,
+      ];
 
       const upcomingCount = allUpcomingBookings.length;
       const upcomingPaid = allUpcomingBookings.filter(
@@ -1037,6 +1039,580 @@ router.get(
     } catch (error) {
       logger.error("Get psychologist sessions error:", error);
       return errorResponse(res, "Failed to retrieve sessions", 500);
+    }
+  }
+);
+
+// Get psychologist history sessions (completed sessions)
+router.get(
+  "/sessions/me/history",
+  authenticate,
+  authorize("psychologist"),
+  async (req, res) => {
+    try {
+      // Get psychologist by email
+      const psychologist = await Psychologist.findOne({
+        email: req.user.email,
+      });
+
+      if (!psychologist) {
+        return errorResponse(res, "Psychologist profile not found", 404);
+      }
+
+      const page = Math.max(parseInt(req.query.page || "1", 10) || 1, 1);
+      const limitRaw = parseInt(req.query.limit || "10", 10) || 10;
+      const limit = Math.min(Math.max(limitRaw, 1), 100);
+
+      // Get completed bookings for this psychologist
+      const query = {
+        psychologist: psychologist._id,
+        status: "completed",
+      };
+
+      const bookings = await Booking.find(query)
+        .populate("user", "name email contact profile.avatar")
+        .sort({ slotDate: -1, createdAt: -1 })
+        .limit(limit)
+        .skip((page - 1) * limit);
+
+      const total = await Booking.countDocuments(query);
+
+      // Format sessions for response
+      const formatSession = (booking) => {
+        const slotDate = new Date(booking.slotDate);
+        const dateStr = slotDate.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+
+        // Calculate duration in minutes
+        const startTime = booking.slotStartTime.split(":").map(Number);
+        const endTime = booking.slotEndTime.split(":").map(Number);
+        const startMinutes = startTime[0] * 60 + startTime[1];
+        const endMinutes = endTime[0] * 60 + endTime[1];
+        const duration = endMinutes - startMinutes;
+
+        // Format time (convert 24h to 12h with AM/PM)
+        const timeStr = (() => {
+          const [hours, minutes] = booking.slotStartTime.split(":").map(Number);
+          const period = hours >= 12 ? "PM" : "AM";
+          const displayHours = hours % 12 || 12;
+          return `${displayHours.toString().padStart(2, "0")}:${minutes
+            .toString()
+            .padStart(2, "0")} ${period}`;
+        })();
+
+        return {
+          _id: booking._id,
+          patient: {
+            _id: booking.user._id,
+            name: booking.user.name || "Unknown",
+            email: booking.user.email,
+            contact: booking.user.contact || null,
+            avatar: booking.user.profile?.avatar || null,
+          },
+          sessionType: "Video Call",
+          isVideoCall: true,
+          duration: duration,
+          durationText: `${duration} min`,
+          date: dateStr,
+          time: timeStr,
+          slotDate: booking.slotDate,
+          slotStartTime: booking.slotStartTime,
+          slotEndTime: booking.slotEndTime,
+          meetingLink: getMeetingLink(booking),
+          status: booking.status,
+          paymentStatus: booking.paymentStatus,
+          sessionStatus: booking.sessionStatus,
+          sessionRate: booking.sessionRate,
+          notes: booking.notes,
+          rating: booking.rating || null,
+          feedback: booking.feedback || null,
+          createdAt: booking.createdAt,
+          updatedAt: booking.updatedAt,
+        };
+      };
+
+      const historySessions = bookings.map(formatSession);
+
+      return successResponse(res, {
+        sessions: historySessions,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          totalItems: total,
+        },
+      });
+    } catch (error) {
+      logger.error("Get psychologist history sessions error:", error);
+      return errorResponse(res, "Failed to retrieve history sessions", 500);
+    }
+  }
+);
+
+// Get session report (downloadable)
+router.get(
+  "/sessions/:sessionId/report",
+  authenticate,
+  authorize("psychologist"),
+  async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const format = req.query.format || "json"; // json or html
+
+      // Get psychologist by email
+      const psychologist = await Psychologist.findOne({
+        email: req.user.email,
+      });
+
+      if (!psychologist) {
+        return errorResponse(res, "Psychologist profile not found", 404);
+      }
+
+      // Get booking/session
+      const booking = await Booking.findOne({
+        _id: sessionId,
+        psychologist: psychologist._id,
+      })
+        .populate("user", "name email contact age profile")
+        .populate(
+          "psychologist",
+          "name email degree specializations city contactNumber"
+        );
+
+      if (!booking) {
+        return errorResponse(res, "Session not found", 404);
+      }
+
+      // Format dates and times
+      const slotDate = new Date(booking.slotDate);
+      const dateStr = slotDate.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      });
+
+      const [startHours, startMinutes] = booking.slotStartTime
+        .split(":")
+        .map(Number);
+      const [endHours, endMinutes] = booking.slotEndTime.split(":").map(Number);
+      const startPeriod = startHours >= 12 ? "PM" : "AM";
+      const endPeriod = endHours >= 12 ? "PM" : "AM";
+      const displayStartHours = startHours % 12 || 12;
+      const displayEndHours = endHours % 12 || 12;
+      const timeStr = `${displayStartHours
+        .toString()
+        .padStart(2, "0")}:${startMinutes
+        .toString()
+        .padStart(2, "0")} ${startPeriod} - ${displayEndHours
+        .toString()
+        .padStart(2, "0")}:${endMinutes
+        .toString()
+        .padStart(2, "0")} ${endPeriod}`;
+
+      const startMin = startHours * 60 + startMinutes;
+      const endMin = endHours * 60 + endMinutes;
+      const duration = endMin - startMin;
+
+      // Build report data
+      const reportData = {
+        reportType: "Session Report",
+        generatedAt: new Date().toISOString(),
+        session: {
+          sessionId: booking._id.toString(),
+          date: dateStr,
+          time: timeStr,
+          duration: `${duration} minutes`,
+          status: booking.status,
+          sessionStatus: booking.sessionStatus,
+          paymentStatus: booking.paymentStatus,
+          sessionRate: booking.sessionRate,
+          meetingLink: booking.meetingLink || "Not provided",
+        },
+        psychologist: {
+          name: booking.psychologist.name,
+          email: booking.psychologist.email,
+          degree: booking.psychologist.degree,
+          specializations: booking.psychologist.specializations || [],
+          city: booking.psychologist.city,
+          contactNumber: booking.psychologist.contactNumber,
+        },
+        patient: {
+          name: booking.user.name,
+          email: booking.user.email,
+          contact: booking.user.contact || "Not provided",
+          age: booking.user.age || "Not provided",
+        },
+        sessionDetails: {
+          notes: booking.notes || "No notes available",
+          rating: booking.rating || "Not rated",
+          feedback: booking.feedback || "No feedback provided",
+          rescheduleReason: booking.rescheduleReason || null,
+          cancellationReason: booking.cancellationReason || null,
+        },
+        timestamps: {
+          createdAt: booking.createdAt,
+          updatedAt: booking.updatedAt,
+          slotDate: booking.slotDate,
+        },
+      };
+
+      if (format === "html") {
+        // Generate HTML report
+        const htmlReport = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Session Report - ${reportData.session.sessionId}</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 40px;
+      background-color: #f5f7fa;
+      color: #1a202c;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      color: #667eea;
+      margin: 0 0 10px 0;
+      font-size: 28px;
+    }
+    .header p {
+      color: #718096;
+      margin: 0;
+      font-size: 14px;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    .section-title {
+      color: #2d3748;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .info-item {
+      padding: 12px;
+      background: #f7fafc;
+      border-radius: 8px;
+    }
+    .info-label {
+      font-size: 12px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+    }
+    .info-value {
+      font-size: 16px;
+      color: #1a202c;
+      font-weight: 600;
+    }
+    .full-width {
+      grid-column: 1 / -1;
+    }
+    .description-box {
+      background: #f7fafc;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      margin-top: 10px;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #e2e8f0;
+      text-align: center;
+      color: #718096;
+      font-size: 12px;
+    }
+    @media print {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Session Report</h1>
+      <p>Generated on ${new Date(reportData.generatedAt).toLocaleString(
+        "en-GB"
+      )}</p>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Session Information</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Session ID</div>
+          <div class="info-value">${reportData.session.sessionId}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Date</div>
+          <div class="info-value">${reportData.session.date}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Time</div>
+          <div class="info-value">${reportData.session.time}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Duration</div>
+          <div class="info-value">${reportData.session.duration}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Status</div>
+          <div class="info-value">${reportData.session.status}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Payment Status</div>
+          <div class="info-value">${reportData.session.paymentStatus}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Session Rate</div>
+          <div class="info-value">₹${reportData.session.sessionRate}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Meeting Link</div>
+          <div class="info-value">${reportData.session.meetingLink}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Psychologist Details</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Name</div>
+          <div class="info-value">${reportData.psychologist.name}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Email</div>
+          <div class="info-value">${reportData.psychologist.email}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Degree</div>
+          <div class="info-value">${reportData.psychologist.degree}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">City</div>
+          <div class="info-value">${reportData.psychologist.city}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Contact</div>
+          <div class="info-value">${reportData.psychologist.contactNumber}</div>
+        </div>
+        <div class="info-item full-width">
+          <div class="info-label">Specializations</div>
+          <div class="info-value">${
+            reportData.psychologist.specializations.join(", ") ||
+            "Not specified"
+          }</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Patient Details</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Name</div>
+          <div class="info-value">${reportData.patient.name}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Email</div>
+          <div class="info-value">${reportData.patient.email}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Contact</div>
+          <div class="info-value">${reportData.patient.contact}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Age</div>
+          <div class="info-value">${reportData.patient.age}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Session Details</h2>
+      <div class="description-box">
+        <div class="info-label">Notes</div>
+        <div style="margin-top: 8px; color: #2d3748; line-height: 1.6;">${
+          reportData.sessionDetails.notes
+        }</div>
+      </div>
+      <div class="info-grid" style="margin-top: 15px;">
+        <div class="info-item">
+          <div class="info-label">Rating</div>
+          <div class="info-value">${reportData.sessionDetails.rating}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Feedback</div>
+          <div class="info-value">${reportData.sessionDetails.feedback}</div>
+        </div>
+      </div>
+      ${
+        reportData.sessionDetails.rescheduleReason
+          ? `
+      <div class="description-box" style="margin-top: 15px; border-left-color: #f59e0b;">
+        <div class="info-label">Reschedule Reason</div>
+        <div style="margin-top: 8px; color: #2d3748; line-height: 1.6;">${reportData.sessionDetails.rescheduleReason}</div>
+      </div>
+      `
+          : ""
+      }
+      ${
+        reportData.sessionDetails.cancellationReason
+          ? `
+      <div class="description-box" style="margin-top: 15px; border-left-color: #f56565;">
+        <div class="info-label">Cancellation Reason</div>
+        <div style="margin-top: 8px; color: #2d3748; line-height: 1.6;">${reportData.sessionDetails.cancellationReason}</div>
+      </div>
+      `
+          : ""
+      }
+    </div>
+
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} Manmitr. All rights reserved.</p>
+      <p>This is an official session report generated by Manmitr platform.</p>
+    </div>
+  </div>
+</body>
+</html>
+        `;
+
+        res.setHeader("Content-Type", "text/html");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="session-report-${sessionId}.html"`
+        );
+        return res.send(htmlReport);
+      } else {
+        // Return JSON report
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="session-report-${sessionId}.json"`
+        );
+        return res.json(reportData);
+      }
+    } catch (error) {
+      logger.error("Get session report error:", error);
+      return errorResponse(res, "Failed to generate session report", 500);
+    }
+  }
+);
+
+// Send booking confirmation email to user
+router.post(
+  "/bookings/:bookingId/send-confirmation-email",
+  authenticate,
+  authorize("psychologist", "admin", "superadmin"),
+  async (req, res) => {
+    try {
+      const { bookingId } = req.params;
+
+      // Get psychologist by email (if psychologist)
+      let psychologist;
+      if (req.user.role === "psychologist") {
+        psychologist = await Psychologist.findOne({
+          email: req.user.email,
+        });
+
+        if (!psychologist) {
+          return errorResponse(res, "Psychologist profile not found", 404);
+        }
+      }
+
+      // Get booking
+      const booking = await Booking.findById(bookingId)
+        .populate("user", "name email")
+        .populate("psychologist", "name");
+
+      if (!booking) {
+        return errorResponse(res, "Booking not found", 404);
+      }
+
+      // Check authorization - psychologist can only send for their own bookings
+      if (
+        req.user.role === "psychologist" &&
+        booking.psychologist._id.toString() !== psychologist._id.toString()
+      ) {
+        return errorResponse(
+          res,
+          "Unauthorized to send email for this booking",
+          403
+        );
+      }
+
+      // Check if booking is confirmed
+      if (booking.status !== "confirmed" && booking.status !== "completed") {
+        return errorResponse(
+          res,
+          "Email can only be sent for confirmed or completed bookings",
+          400
+        );
+      }
+
+      // Send confirmation email
+      await emailService.sendBookingConfirmationEmail(
+        booking.user.email,
+        booking.user.name,
+        booking.psychologist.name,
+        booking.slotDate,
+        booking.slotStartTime,
+        booking.slotEndTime,
+        booking.meetingLink || null,
+        booking.sessionRate || null
+      );
+
+      return successResponse(
+        res,
+        {
+          bookingId: booking._id,
+          userEmail: booking.user.email,
+          sentAt: new Date(),
+        },
+        "Booking confirmation email sent successfully"
+      );
+    } catch (error) {
+      logger.error("Send booking confirmation email error:", error);
+      return errorResponse(
+        res,
+        "Failed to send booking confirmation email",
+        500
+      );
     }
   }
 );

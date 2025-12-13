@@ -533,6 +533,184 @@ class EmailService {
       throw error;
     }
   }
+
+  async sendBookingConfirmationEmail(
+    userEmail,
+    userName,
+    psychologistName,
+    slotDate,
+    slotStartTime,
+    slotEndTime,
+    meetingLink = null,
+    sessionRate = null
+  ) {
+    try {
+      // Format date
+      const date = new Date(slotDate);
+      const dateStr = date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      });
+
+      // Format time (convert 24h to 12h with AM/PM)
+      const [startHours, startMinutes] = slotStartTime.split(":").map(Number);
+      const [endHours, endMinutes] = slotEndTime.split(":").map(Number);
+      
+      const startPeriod = startHours >= 12 ? "PM" : "AM";
+      const endPeriod = endHours >= 12 ? "PM" : "AM";
+      const displayStartHours = startHours % 12 || 12;
+      const displayEndHours = endHours % 12 || 12;
+      
+      const timeStr = `${displayStartHours.toString().padStart(2, "0")}:${startMinutes
+        .toString()
+        .padStart(2, "0")} ${startPeriod} - ${displayEndHours.toString().padStart(2, "0")}:${endMinutes
+        .toString()
+        .padStart(2, "0")} ${endPeriod}`;
+
+      // Calculate duration
+      const startMin = startHours * 60 + startMinutes;
+      const endMin = endHours * 60 + endMinutes;
+      const duration = endMin - startMin;
+
+      const mailOptions = {
+        from: emailConfig.from,
+        to: userEmail,
+        subject: `Session Confirmed with ${psychologistName} - Manmitr`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Session Confirmation</title>
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f5f7fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 40px 20px;">
+                  <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);">
+                    <!-- Header with logo -->
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                        <img src="${emailConfig.logoUrl}" alt="Manmitr Logo" style="max-width: 150px; height: auto; margin-bottom: 10px; display: inline-block;" />
+                        <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Manmitr</h1>
+                        <p style="margin: 10px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 14px;">Manmitr Support Platform</p>
+                      </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                      <td style="padding: 40px 30px;">
+                        <h2 style="margin: 0 0 20px 0; color: #1a202c; font-size: 24px; font-weight: 600;">✅ Session Confirmed!</h2>
+                        <p style="margin: 0 0 16px 0; color: #4a5568; font-size: 16px; line-height: 24px;">
+                          Hi <strong style="color: #667eea;">${userName || "User"}</strong>,
+                        </p>
+                        <p style="margin: 0 0 24px 0; color: #4a5568; font-size: 16px; line-height: 24px;">
+                          Your session has been successfully confirmed. We're looking forward to supporting you on your journey.
+                        </p>
+                        
+                        <!-- Session Details Box -->
+                        <div style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); border-radius: 12px; padding: 24px; margin: 30px 0;">
+                          <h3 style="margin: 0 0 20px 0; color: #1a202c; font-size: 18px; font-weight: 600;">Session Details</h3>
+                          <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                              <td style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                                <p style="margin: 0; color: #2d3748; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Psychologist</p>
+                                <p style="margin: 4px 0 0 0; color: #1a202c; font-size: 16px; font-weight: 600;">${psychologistName}</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                                <p style="margin: 0; color: #2d3748; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Date</p>
+                                <p style="margin: 4px 0 0 0; color: #1a202c; font-size: 16px; font-weight: 600;">${dateStr}</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                                <p style="margin: 0; color: #2d3748; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Time</p>
+                                <p style="margin: 4px 0 0 0; color: #1a202c; font-size: 16px; font-weight: 600;">${timeStr}</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                                <p style="margin: 0; color: #2d3748; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Duration</p>
+                                <p style="margin: 4px 0 0 0; color: #1a202c; font-size: 16px; font-weight: 600;">${duration} minutes</p>
+                              </td>
+                            </tr>
+                            ${sessionRate ? `
+                            <tr>
+                              <td style="padding: 8px 0;">
+                                <p style="margin: 0; color: #2d3748; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Session Rate</p>
+                                <p style="margin: 4px 0 0 0; color: #1a202c; font-size: 16px; font-weight: 600;">₹${sessionRate}</p>
+                              </td>
+                            </tr>
+                            ` : ''}
+                          </table>
+                        </div>
+                        
+                        ${meetingLink ? `
+                        <div style="background-color: #ebf4ff; border-left: 4px solid #4299e1; padding: 16px; border-radius: 4px; margin: 24px 0;">
+                          <p style="margin: 0 0 8px 0; color: #2c5282; font-size: 14px; font-weight: 600;">
+                            🔗 Meeting Link
+                          </p>
+                          <p style="margin: 0; color: #2c5282; font-size: 14px; line-height: 20px; word-break: break-all;">
+                            <a href="${meetingLink}" style="color: #4299e1; text-decoration: none;">${meetingLink}</a>
+                          </p>
+                        </div>
+                        ` : `
+                        <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin: 24px 0;">
+                          <p style="margin: 0; color: #78350f; font-size: 14px; line-height: 20px;">
+                            ℹ️ <strong>Meeting Link:</strong> Your meeting link will be shared with you before the session.
+                          </p>
+                        </div>
+                        `}
+                        
+                        <div style="background-color: #f0fff4; border-left: 4px solid #48bb78; padding: 16px; border-radius: 4px; margin: 24px 0;">
+                          <p style="margin: 0; color: #22543d; font-size: 14px; line-height: 20px;">
+                            💡 <strong>Reminder:</strong> Please join the session a few minutes early to ensure a smooth experience.
+                          </p>
+                        </div>
+                        
+                        <p style="margin: 24px 0 0 0; color: #718096; font-size: 14px; line-height: 20px;">
+                          If you need to reschedule or cancel your session, please contact us at least 24 hours in advance.
+                        </p>
+                        
+                        <p style="margin: 24px 0 0 0; color: #4a5568; font-size: 15px; line-height: 22px;">
+                          Best regards,<br/>
+                          <strong style="color: #667eea;">The Manmitr Team</strong>
+                        </p>
+                      </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f7fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                        <p style="margin: 0 0 8px 0; color: #718096; font-size: 13px;">
+                          © 2025 Manmitr. All rights reserved.
+                        </p>
+                        <p style="margin: 0; color: #a0aec0; font-size: 12px;">
+                          Your journey of mental wellness starts here.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `,
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      logger.info(`Booking confirmation email sent to ${userEmail}`);
+      return result;
+    } catch (error) {
+      logger.error("Failed to send booking confirmation email:", error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new EmailService();
