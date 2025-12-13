@@ -1155,31 +1155,43 @@ router.get(
 router.get(
   "/sessions/:sessionId/report",
   authenticate,
-  authorize("psychologist"),
+  authorize("psychologist", "admin", "superadmin"),
   async (req, res) => {
     try {
       const { sessionId } = req.params;
       const format = req.query.format || "json"; // json or html
 
-      // Get psychologist by email
-      const psychologist = await Psychologist.findOne({
-        email: req.user.email,
-      });
-
-      if (!psychologist) {
-        return errorResponse(res, "Psychologist profile not found", 404);
-      }
-
       // Get booking/session
-      const booking = await Booking.findOne({
-        _id: sessionId,
-        psychologist: psychologist._id,
-      })
-        .populate("user", "name email contact age profile")
-        .populate(
-          "psychologist",
-          "name email degree specializations city contactNumber"
-        );
+      let booking;
+
+      if (req.user.role === "psychologist") {
+        // Psychologist can only access their own sessions
+        const psychologist = await Psychologist.findOne({
+          email: req.user.email,
+        });
+
+        if (!psychologist) {
+          return errorResponse(res, "Psychologist profile not found", 404);
+        }
+
+        booking = await Booking.findOne({
+          _id: sessionId,
+          psychologist: psychologist._id,
+        })
+          .populate("user", "name email contact age profile")
+          .populate(
+            "psychologist",
+            "name email degree specializations city contactNumber"
+          );
+      } else {
+        // Admin/Superadmin can access any session
+        booking = await Booking.findById(sessionId)
+          .populate("user", "name email contact age profile")
+          .populate(
+            "psychologist",
+            "name email degree specializations city contactNumber"
+          );
+      }
 
       if (!booking) {
         return errorResponse(res, "Session not found", 404);
@@ -1530,6 +1542,124 @@ router.get(
     } catch (error) {
       logger.error("Get session report error:", error);
       return errorResponse(res, "Failed to generate session report", 500);
+    }
+  }
+);
+
+// Get psychologist history sessions by psychologist ID (for superadmin/admin)
+router.get(
+  "/sessions/history/:psychologistId",
+  authenticate,
+  authorize("admin", "superadmin"),
+  async (req, res) => {
+    try {
+      const { psychologistId } = req.params;
+
+      // Verify psychologist exists
+      const psychologist = await Psychologist.findById(psychologistId);
+
+      if (!psychologist) {
+        return errorResponse(res, "Psychologist not found", 404);
+      }
+
+      const page = Math.max(parseInt(req.query.page || "1", 10) || 1, 1);
+      const limitRaw = parseInt(req.query.limit || "10", 10) || 10;
+      const limit = Math.min(Math.max(limitRaw, 1), 100);
+
+      // Get completed bookings for this psychologist
+      const query = {
+        psychologist: psychologistId,
+        status: "completed",
+      };
+
+      const bookings = await Booking.find(query)
+        .populate("user", "name email contact profile.avatar")
+        .sort({ slotDate: -1, createdAt: -1 })
+        .limit(limit)
+        .skip((page - 1) * limit);
+
+      const total = await Booking.countDocuments(query);
+
+      // Format sessions for response
+      const formatSession = (booking) => {
+        const slotDate = new Date(booking.slotDate);
+        const dateStr = slotDate.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+
+        // Calculate duration in minutes
+        const startTime = booking.slotStartTime.split(":").map(Number);
+        const endTime = booking.slotEndTime.split(":").map(Number);
+        const startMinutes = startTime[0] * 60 + startTime[1];
+        const endMinutes = endTime[0] * 60 + endTime[1];
+        const duration = endMinutes - startMinutes;
+
+        // Format time (convert 24h to 12h with AM/PM)
+        const timeStr = (() => {
+          const [hours, minutes] = booking.slotStartTime.split(":").map(Number);
+          const period = hours >= 12 ? "PM" : "AM";
+          const displayHours = hours % 12 || 12;
+          return `${displayHours.toString().padStart(2, "0")}:${minutes
+            .toString()
+            .padStart(2, "0")} ${period}`;
+        })();
+
+        return {
+          _id: booking._id,
+          patient: {
+            _id: booking.user._id,
+            name: booking.user.name || "Unknown",
+            email: booking.user.email,
+            contact: booking.user.contact || null,
+            avatar: booking.user.profile?.avatar || null,
+          },
+          psychologist: {
+            _id: psychologist._id,
+            name: psychologist.name,
+            email: psychologist.email,
+          },
+          sessionType: "Video Call",
+          isVideoCall: true,
+          duration: duration,
+          durationText: `${duration} min`,
+          date: dateStr,
+          time: timeStr,
+          slotDate: booking.slotDate,
+          slotStartTime: booking.slotStartTime,
+          slotEndTime: booking.slotEndTime,
+          meetingLink: getMeetingLink(booking),
+          status: booking.status,
+          paymentStatus: booking.paymentStatus,
+          sessionStatus: booking.sessionStatus,
+          sessionRate: booking.sessionRate,
+          notes: booking.notes,
+          rating: booking.rating || null,
+          feedback: booking.feedback || null,
+          createdAt: booking.createdAt,
+          updatedAt: booking.updatedAt,
+        };
+      };
+
+      const historySessions = bookings.map(formatSession);
+
+      return successResponse(res, {
+        psychologist: {
+          _id: psychologist._id,
+          name: psychologist.name,
+          email: psychologist.email,
+        },
+        sessions: historySessions,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          totalItems: total,
+        },
+      });
+    } catch (error) {
+      logger.error("Get psychologist history sessions by ID error:", error);
+      return errorResponse(res, "Failed to retrieve history sessions", 500);
     }
   }
 );
