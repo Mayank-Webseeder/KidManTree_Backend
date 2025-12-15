@@ -1741,6 +1741,18 @@ router.get(
             .padStart(2, "0")} ${period}`;
         })();
 
+        // Build prescription summary (same style as report)
+        const prescription = booking.prescription
+          ? {
+              title: booking.prescription.title || "Prescription",
+              medications: booking.prescription.medications || [],
+              advice: booking.prescription.advice || null,
+              followUpDate: booking.prescription.followUpDate || null,
+              updatedAt:
+                booking.prescription.updatedAt || booking.updatedAt || null,
+            }
+          : null;
+
         return {
           _id: booking._id,
           patient: {
@@ -1772,6 +1784,9 @@ router.get(
           notes: booking.notes,
           rating: booking.rating || null,
           feedback: booking.feedback || null,
+          rescheduleReason: booking.rescheduleReason || null,
+          cancellationReason: booking.cancellationReason || null,
+          prescription,
           createdAt: booking.createdAt,
           updatedAt: booking.updatedAt,
         };
