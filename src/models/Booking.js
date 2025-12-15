@@ -103,6 +103,33 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       maxlength: 1000,
     },
+    prescription: {
+      title: {
+        type: String,
+        trim: true,
+        maxlength: 200,
+      },
+      medications: [
+        {
+          name: { type: String, trim: true, maxlength: 120 },
+          dosage: { type: String, trim: true, maxlength: 120 },
+          frequency: { type: String, trim: true, maxlength: 120 },
+          duration: { type: String, trim: true, maxlength: 120 },
+          notes: { type: String, trim: true, maxlength: 400 },
+        },
+      ],
+      advice: {
+        type: String,
+        trim: true,
+        maxlength: 2000,
+      },
+      followUpDate: {
+        type: Date,
+      },
+      updatedAt: {
+        type: Date,
+      },
+    },
     rescheduledFrom: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Booking",
