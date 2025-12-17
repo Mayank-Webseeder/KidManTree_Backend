@@ -127,7 +127,7 @@ router.delete(
 );
 router.get(
   "/user/userDetails/:id",
-  authorize("admin", "superadmin"),
+  authorize("admin", "superadmin","psychologist"),
   userController.getUserDetails
 );
 router.patch(
