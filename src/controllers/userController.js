@@ -194,6 +194,97 @@ class UserController {
     }
   }
 
+  // Psychologist: Update own user profile and optional psychologist profile/slots
+  async psychologistUpdateOwnProfile(req, res) {
+    try {
+      if (!req.user || req.user.role !== "psychologist") {
+        return errorResponse(
+          res,
+          "Only psychologists can update this profile",
+          403
+        );
+      }
+
+      const id = req.user._id;
+      const {
+        name,
+        email,
+        contact,
+        age,
+        profile,
+        // Optional nested psychologist object for Psychologist model fields
+        psychologist,
+        // Optional direct schedule/slots update for Psychologist profile
+        schedule,
+      } = req.body;
+
+      const updateData = {};
+      if (name !== undefined) updateData.name = name;
+      if (email !== undefined) updateData.email = email;
+      if (contact !== undefined) updateData.contact = contact;
+      if (age !== undefined) updateData.age = age;
+      if (profile !== undefined) {
+        if (profile.avatar !== undefined)
+          updateData["profile.avatar"] = profile.avatar;
+        if (profile.bio !== undefined) updateData["profile.bio"] = profile.bio;
+        if (profile.interests !== undefined)
+          updateData["profile.interests"] = profile.interests;
+        if (profile.emergencyContact !== undefined)
+          updateData["profile.emergencyContact"] = profile.emergencyContact;
+      }
+
+      const userBefore = await User.findById(id);
+      if (!userBefore) {
+        return errorResponse(res, "User not found", 404);
+      }
+
+      const emailChanged = email && email !== userBefore.email;
+
+      const user = await User.findByIdAndUpdate(
+        id,
+        { $set: updateData },
+        { new: true, runValidators: true, select: "-password" }
+      );
+
+      // Build Psychologist update payload if psychologist exists for this user
+      const psychUpdate = {};
+
+      if (psychologist && typeof psychologist === "object") {
+        Object.assign(psychUpdate, psychologist);
+      }
+
+      // Allow optional direct schedule update (replace existing schedule)
+      if (Array.isArray(schedule)) {
+        psychUpdate.schedule = schedule;
+      }
+
+      if (emailChanged) {
+        psychUpdate.email = email;
+      }
+
+      if (Object.keys(psychUpdate).length > 0) {
+        await Psychologist.findOneAndUpdate(
+          { email: userBefore.email },
+          psychUpdate,
+          { new: true, runValidators: true }
+        );
+      }
+
+      return successResponse(
+        res,
+        { user },
+        "Psychologist profile updated successfully"
+      );
+    } catch (error) {
+      logger.error("Psychologist update own profile error:", error);
+      const message =
+        error.code === 11000
+          ? "Email or contact already exists"
+          : "Failed to update psychologist profile";
+      return errorResponse(res, message, 400);
+    }
+  }
+
   // Admin/Superadmin: Delete a user and cascade role-specific data
   async adminDeleteUserAndRole(req, res) {
     try {

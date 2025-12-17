@@ -117,9 +117,17 @@ router.patch(
 );
 router.put(
   "/admin/:id",
-  authorize("admin", "superadmin"),
+  authorize("admin", "superadmin", "psychologist"),
   userController.adminUpdateUserProfile
 );
+
+// Psychologist self-service route to update own profile (and optional slots)
+router.put(
+  "/psychologist/me",
+  authorize("psychologist"),
+  userController.psychologistUpdateOwnProfile
+);
+
 router.delete(
   "/admin/:id",
   authorize("admin", "superadmin"),
@@ -127,7 +135,7 @@ router.delete(
 );
 router.get(
   "/user/userDetails/:id",
-  authorize("admin", "superadmin","psychologist"),
+  authorize("admin", "superadmin", "psychologist"),
   userController.getUserDetails
 );
 router.patch(
