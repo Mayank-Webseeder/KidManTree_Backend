@@ -175,6 +175,28 @@ const notificationEvents = {
     }, "mood journal reminder");
   },
 
+  async inactiveUserReminder(user, daysInactive = 7) {
+    if (!user?._id) return;
+    await safeExec(
+      async () => {
+        await notificationService.createNotification({
+          user: user._id,
+          title: "We miss you on Manmitr",
+          description: `You haven't logged in for ${daysInactive} day${
+            daysInactive === 1 ? "" : "s"
+          }. Check in to continue your wellbeing journey.`,
+          type: "system",
+          priority: "normal",
+          metadata: {
+            daysInactive,
+            lastLogin: user.lastLogin,
+          },
+        });
+      },
+      "inactive user reminder"
+    );
+  },
+
   async communitySuggestion(user, suggestion) {
     if (!user?._id) return;
     await safeExec(async () => {

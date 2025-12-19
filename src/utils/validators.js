@@ -3,6 +3,8 @@ const Joi = require("joi");
 const signupSchema = Joi.object({
   name: Joi.string().min(2).max(50).required(),
   email: Joi.string().email().required(),
+  city: Joi.string().max(100).optional(),
+  state: Joi.string().max(100).optional(),
   password: Joi.string()
     .min(8)
     .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)

@@ -36,7 +36,7 @@ class AuthService {
   }
 
   async register(userData) {
-    const { name, email, password, contact, age } = userData;
+    const { name, email, password, contact, age, city, state } = userData;
 
     // Check if user already exists in main User collection
     const existingUser = await User.findOne({
@@ -72,7 +72,9 @@ class AuthService {
       password: hashedPassword,
       contact,
       age,
-      tempToken
+      city,
+      state,
+      tempToken,
     });
 
     await pendingUser.save();
@@ -271,9 +273,11 @@ class AuthService {
         password: updatedPendingUser.password, // Already hashed
         contact: updatedPendingUser.contact,
         age: updatedPendingUser.age,
+        city: updatedPendingUser.city,
+        state: updatedPendingUser.state,
         isEmailVerified: true,
         isContactVerified: true,
-        isActive: updatedPendingUser.age >= 18 // If under 18, will need parent consent
+        isActive: updatedPendingUser.age >= 18, // If under 18, will need parent consent
       };
 
       // Store tempToken for users under 18 for parent consent process

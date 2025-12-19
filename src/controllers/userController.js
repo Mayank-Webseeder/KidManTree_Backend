@@ -130,6 +130,8 @@ class UserController {
       const { id } = req.params;
       const {
         name,
+        city,
+        state,
         email,
         contact,
         age,
@@ -140,6 +142,8 @@ class UserController {
 
       const updateData = {};
       if (name !== undefined) updateData.name = name;
+      if (city !== undefined) updateData.city = city;
+      if (state !== undefined) updateData.state = state;
       if (email !== undefined) updateData.email = email;
       if (contact !== undefined) updateData.contact = contact;
       if (age !== undefined) updateData.age = age;
@@ -208,6 +212,8 @@ class UserController {
       const id = req.user._id;
       const {
         name,
+        city,
+        state,
         email,
         contact,
         age,
@@ -220,6 +226,8 @@ class UserController {
 
       const updateData = {};
       if (name !== undefined) updateData.name = name;
+      if (city !== undefined) updateData.city = city;
+      if (state !== undefined) updateData.state = state;
       if (email !== undefined) updateData.email = email;
       if (contact !== undefined) updateData.contact = contact;
       if (age !== undefined) updateData.age = age;

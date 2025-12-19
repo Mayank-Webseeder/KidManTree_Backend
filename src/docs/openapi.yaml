@@ -40,6 +40,10 @@ components:
           type: string
         age:
           type: integer
+        city:
+          type: string
+        state:
+          type: string
         role:
           type: string
           enum: [user, admin, superadmin, psychologist, user-panel]
