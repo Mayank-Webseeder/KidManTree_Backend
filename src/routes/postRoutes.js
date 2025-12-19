@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
 const postController = require("../controllers/postController");
-const { authenticate, optionalAuth } = require("../middlewares/auth");
+const { authenticate, optionalAuth, authorize } = require("../middlewares/auth");
 
 const router = express.Router();
 
@@ -54,5 +54,11 @@ router.put(
 router.delete("/:id", authenticate, postController.deletePost);
 router.post("/:id/like", authenticate, postController.likePost);
 router.post("/:id/comments", authenticate, postController.addComment);
+router.get(
+  "/admin/user/:userId/posts",
+  authenticate,
+  authorize("admin", "superadmin"),
+  postController.getPostsByUserId
+);
 
 module.exports = router;

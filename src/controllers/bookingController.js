@@ -217,8 +217,9 @@ class BookingController {
       await notificationService.createNotification({
         user: booking.psychologist._id,
         title: "Session scheduled",
-        description: `${booking.user.name || "New patient"
-          } booked a session on ${dateStr} at ${timeStr}.`,
+        description: `${
+          booking.user.name || "New patient"
+        } booked a session on ${dateStr} at ${timeStr}.`,
         type: "session",
         priority: "high",
         metadata: {
@@ -445,8 +446,8 @@ class BookingController {
       booking.cancelledBy = isAdmin
         ? "admin"
         : isPsychologist
-          ? "psychologist"
-          : "user";
+        ? "psychologist"
+        : "user";
       booking.cancelledAt = new Date();
 
       // Handle refund if payment was made
@@ -567,8 +568,9 @@ class BookingController {
       await notificationService.createNotification({
         user: populatedBooking.psychologist._id,
         title: "Session rescheduled",
-        description: `${populatedBooking.user.name || "Patient"
-          } moved the session to ${dateStr} at ${timeStr}.`,
+        description: `${
+          populatedBooking.user.name || "Patient"
+        } moved the session to ${dateStr} at ${timeStr}.`,
         type: "session",
         metadata: {
           bookingId: populatedBooking._id,
@@ -579,8 +581,7 @@ class BookingController {
       await notificationService.createNotification({
         user: populatedBooking.user._id,
         title: "Session updated",
-        description: `Your session with ${populatedBooking.psychologist.name
-          } is now scheduled for ${dateStr} at ${timeStr}.`,
+        description: `Your session with ${populatedBooking.psychologist.name} is now scheduled for ${dateStr} at ${timeStr}.`,
         type: "session",
         metadata: {
           bookingId: populatedBooking._id,
@@ -738,11 +739,7 @@ class BookingController {
       const isAdmin = ["admin", "superadmin"].includes(userRole);
 
       if (!isPsychologist && !isAdmin) {
-        return errorResponse(
-          res,
-          "Unauthorized to update meeting link",
-          403
-        );
+        return errorResponse(res, "Unauthorized to update meeting link", 403);
       }
 
       booking.meetingLink = meetingLink;
@@ -785,11 +782,7 @@ class BookingController {
       const isAdmin = ["admin", "superadmin"].includes(userRole);
 
       if (!isPsychologist && !isAdmin) {
-        return errorResponse(
-          res,
-          "Unauthorized to send meeting link",
-          403
-        );
+        return errorResponse(res, "Unauthorized to send meeting link", 403);
       }
 
       if (meetingLink) {
@@ -850,6 +843,40 @@ class BookingController {
     } catch (error) {
       logger.error("Send meeting link error:", error);
       return errorResponse(res, "Failed to send meeting link", 500);
+    }
+  }
+
+  // Get bookings by user ID (admin only)
+  async getBookingsByUserId(req, res) {
+    try {
+      const { userId } = req.params;
+      const { status, page = 1, limit = 10 } = req.query;
+
+      const query = { user: userId };
+      if (status) query.status = status;
+
+      const bookings = await Booking.find(query)
+        .populate(
+          "psychologist",
+          "name firstName lastName specializations rating averageRating profileImage"
+        )
+        .sort({ slotDate: -1, createdAt: -1 })
+        .limit(limit * 1)
+        .skip((page - 1) * limit);
+
+      const total = await Booking.countDocuments(query);
+
+      return successResponse(res, {
+        bookings,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total / limit),
+          totalItems: total,
+        },
+      });
+    } catch (error) {
+      logger.error("Get user bookings error:", error);
+      return errorResponse(res, "Failed to retrieve user bookings", 500);
     }
   }
 }

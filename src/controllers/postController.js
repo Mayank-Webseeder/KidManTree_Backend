@@ -358,6 +358,46 @@ class PostController {
       return errorResponse(res, "Failed to retrieve comments", 500);
     }
   }
+  
+  async getPostsByUserId(req, res) {
+    try {
+      const { userId } = req.params;
+      const { page = 1, limit = 10, moodTag } = req.query;
+
+      const query = { author: userId, isDeleted: false };
+      if (moodTag) query.moodTag = moodTag;
+
+      const posts = await Post.find(query)
+        .populate("author", "name profile.avatar")
+        .sort({ createdAt: -1 })
+        .limit(limit * 1)
+        .skip((page - 1) * limit);
+
+      const total = await Post.countDocuments(query);
+
+      const postsWithUrls = posts.map((p) => {
+        const obj = p.toObject();
+        if (obj.postImage) obj.postImageUrl = getFileUrl(obj.postImage);
+        return obj;
+      });
+
+      return successResponse(
+        res,
+        {
+          posts: postsWithUrls,
+          pagination: {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(total / limit),
+            totalItems: total,
+          },
+        },
+        "User posts retrieved successfully"
+      );
+    } catch (error) {
+      logger.error("Get posts by user ID error:", error);
+      return errorResponse(res, "Failed to retrieve user posts", 500);
+    }
+  }
 }
 
 module.exports = new PostController();

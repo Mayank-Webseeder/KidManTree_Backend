@@ -64,6 +64,13 @@ router.get(
   authorize("admin", "superadmin"),
   bookingController.getAllBookings
 );
+router.get(
+  "/admin/user/:userId/bookings",
+  authenticate,
+  authorize("admin", "superadmin"),
+  bookingController.getBookingsByUserId
+);
+
 router.put(
   "/admin/:id",
   authenticate,
