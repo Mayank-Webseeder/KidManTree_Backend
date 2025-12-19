@@ -11,10 +11,12 @@ class PodcastController {
         return errorResponse(res, "title and youtubeLink are required", 400);
       if (!req.file) return errorResponse(res, "thumbnail is required", 400);
 
-      const relativePath = req.file.path
-        .replace(/\\/g, "/")
-        .replace(process.cwd(), "")
-        .replace(/^\//, "");
+      let relativePath = req.file.path.replace(/\\/g, "/");
+
+      const uploadsIndex = relativePath.indexOf("uploads/");
+      if (uploadsIndex !== -1) {
+        relativePath = relativePath.substring(uploadsIndex);
+      }
 
       const podcast = await Podcast.create({
         title,
@@ -87,10 +89,13 @@ class PodcastController {
       if (youtubeLink !== undefined) updates.youtubeLink = youtubeLink;
       if (description !== undefined) updates.description = description;
       if (req.file) {
-        const relativePath = req.file.path
-          .replace(/\\/g, "/")
-          .replace(process.cwd(), "")
-          .replace(/^\//, "");
+        let relativePath = req.file.path.replace(/\\/g, "/");
+
+        const uploadsIndex = relativePath.indexOf("uploads/");
+        if (uploadsIndex !== -1) {
+          relativePath = relativePath.substring(uploadsIndex);
+        }
+
         updates.thumbnailPath = relativePath;
       }
 

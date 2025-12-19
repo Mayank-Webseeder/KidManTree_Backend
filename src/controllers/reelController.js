@@ -11,10 +11,12 @@ class ReelController {
       if (!title) return errorResponse(res, "Title is required", 400);
       if (!req.file) return errorResponse(res, "Video is required", 400);
 
-      const relativePath = req.file.path
-        .replace(/\\/g, "/")
-        .replace(process.cwd(), "")
-        .replace(/^\//, "");
+      let relativePath = req.file.path.replace(/\\/g, "/");
+
+      const uploadsIndex = relativePath.indexOf("uploads/");
+      if (uploadsIndex !== -1) {
+        relativePath = relativePath.substring(uploadsIndex);
+      }
 
       const reel = await Reel.create({
         title,
@@ -49,11 +51,15 @@ class ReelController {
       if (title !== undefined) updates.title = title;
       if (description !== undefined) updates.description = description;
       if (isActive !== undefined) updates.isActive = isActive;
+
       if (req.file) {
-        const relativePath = req.file.path
-          .replace(/\\/g, "/")
-          .replace(process.cwd(), "")
-          .replace(/^\//, "");
+        let relativePath = req.file.path.replace(/\\/g, "/");
+
+        const uploadsIndex = relativePath.indexOf("uploads/");
+        if (uploadsIndex !== -1) {
+          relativePath = relativePath.substring(uploadsIndex);
+        }
+
         updates.videoPath = relativePath;
       }
 
@@ -64,10 +70,12 @@ class ReelController {
       );
 
       if (!reel) return errorResponse(res, "Reel not found", 404);
+
       const withUrl = {
         ...reel.toObject(),
         videoUrl: getVideoUrl(reel.videoPath),
       };
+
       return successResponse(
         res,
         { reel: withUrl },

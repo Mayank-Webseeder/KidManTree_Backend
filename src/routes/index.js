@@ -13,12 +13,13 @@ const chatbotRoutes = require("./chatbotRoutes");
 const musicRoutes = require("./musicRoutes");
 const podcastRoutes = require("./podcastRoutes");
 const reelRoutes = require("./reelRoutes");
+const videoRoutes = require("./videoRoutes");
 const supportRoutes = require("./supportRoutes");
 const userPanelRoutes = require("./userPanelRoutes");
 const reportRoutes = require("./reportRoutes");
 const bookingRoutes = require("./bookings");
 const notificationRoutes = require("./notificationRoutes");
-const groupRoutes = require("./groupRoutes")
+const groupRoutes = require("./groupRoutes");
 
 const router = express.Router();
 
@@ -37,6 +38,7 @@ router.use("/chatbot", chatbotRoutes);
 router.use("/music", musicRoutes);
 router.use("/podcasts", podcastRoutes);
 router.use("/reels", reelRoutes);
+router.use("/videos", videoRoutes);
 router.use("/support", supportRoutes);
 router.use("/user-panel", userPanelRoutes);
 router.use("/reports", reportRoutes);

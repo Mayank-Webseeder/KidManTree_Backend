@@ -8,18 +8,18 @@ const { getThumbnailUrl, getAudioUrl } = require("../utils/fileUrl");
 const notificationEvents = require("../services/notificationEvents");
 
 class MusicController {
-  // Categories
   async createCategory(req, res) {
     try {
       const { name } = req.body;
       if (!name) return errorResponse(res, "Category name is required", 400);
       if (!req.file) return errorResponse(res, "Thumbnail is required", 400);
 
-      // Store relative path instead of absolute path
-      const relativePath = req.file.path
-        .replace(/\\/g, "/")
-        .replace(process.cwd(), "")
-        .replace(/^\//, "");
+      let relativePath = req.file.path.replace(/\\/g, "/");
+
+      const uploadsIndex = relativePath.indexOf("uploads/");
+      if (uploadsIndex !== -1) {
+        relativePath = relativePath.substring(uploadsIndex);
+      }
 
       const category = await MusicCategory.create({
         name,
@@ -27,7 +27,6 @@ class MusicController {
         createdBy: req.user._id,
       });
 
-      // Add thumbnailUrl to response
       const categoryWithUrl = {
         ...category.toObject(),
         thumbnailUrl: getThumbnailUrl(relativePath),
@@ -54,12 +53,14 @@ class MusicController {
       const { id } = req.params;
       const updates = {};
       if (req.body.name !== undefined) updates.name = req.body.name;
+
       if (req.file) {
-        // Store relative path instead of absolute path
-        const relativePath = req.file.path
-          .replace(/\\/g, "/")
-          .replace(process.cwd(), "")
-          .replace(/^\//, "");
+        let relativePath = req.file.path.replace(/\\/g, "/");
+
+        const uploadsIndex = relativePath.indexOf("uploads/");
+        if (uploadsIndex !== -1) {
+          relativePath = relativePath.substring(uploadsIndex);
+        }
         updates.thumbnailPath = relativePath;
       }
 
@@ -71,7 +72,6 @@ class MusicController {
 
       if (!category) return errorResponse(res, "Category not found", 404);
 
-      // Add thumbnailUrl to response
       const categoryWithUrl = {
         ...category.toObject(),
         thumbnailUrl: getThumbnailUrl(category.thumbnailPath),
@@ -98,9 +98,7 @@ class MusicController {
       const category = await MusicCategory.findById(id);
       if (!category) return errorResponse(res, "Category not found", 404);
 
-      // Delete music tracks in this category
       const tracks = await Music.find({ category: id });
-      // Optionally remove files from disk (best-effort)
       tracks.forEach((t) => {
         if (t.audioPath) {
           fs.unlink(t.audioPath, () => {});
@@ -125,7 +123,6 @@ class MusicController {
     try {
       const categories = await MusicCategory.find({}).sort({ createdAt: -1 });
 
-      // Add thumbnailUrl to each category
       const categoriesWithUrls = categories.map((category) => ({
         ...category.toObject(),
         thumbnailUrl: getThumbnailUrl(category.thumbnailPath),
@@ -142,7 +139,6 @@ class MusicController {
     }
   }
 
-  // Music
   async getMusicByCategory(req, res) {
     try {
       const { categoryId } = req.params;
@@ -156,7 +152,6 @@ class MusicController {
 
       const musics = await Music.find(query).sort({ createdAt: -1 });
 
-      // Add audioUrl to each music
       const musicsWithUrls = musics.map((music) => ({
         ...music.toObject(),
         audioUrl: getAudioUrl(music.audioPath),
@@ -191,7 +186,6 @@ class MusicController {
         audioPath: audioUrl,
       });
 
-      // Add audioUrl to response
       const trackWithUrl = {
         ...track.toObject(),
         audioUrl: getAudioUrl(track.audioPath),
@@ -218,7 +212,7 @@ class MusicController {
   async addMusicBulk(req, res) {
     try {
       const { categoryId } = req.params;
-      const { payload } = req.body; // optional titles/genres mapping by index
+      const { payload } = req.body;
 
       const category = await MusicCategory.findById(categoryId);
       if (!category) return errorResponse(res, "Category not found", 404);
@@ -246,7 +240,6 @@ class MusicController {
         })
       );
 
-      // Add audioUrl to each track
       const tracksWithUrls = tracks.map((track) => ({
         ...track.toObject(),
         audioUrl: getAudioUrl(track.audioPath),
@@ -277,17 +270,20 @@ class MusicController {
 
   async updateMusic(req, res) {
     try {
-      const { id } = req.params; // music id
+      const { id } = req.params;
       const { title, genre } = req.body;
       const updates = {};
+
       if (title !== undefined) updates.title = title;
       if (genre !== undefined) updates.genre = genre;
+
       if (req.file) {
-        // Store relative path instead of absolute path
-        const relativePath = req.file.path
-          .replace(/\\/g, "/")
-          .replace(process.cwd(), "")
-          .replace(/^\//, "");
+        let relativePath = req.file.path.replace(/\\/g, "/");
+
+        const uploadsIndex = relativePath.indexOf("uploads/");
+        if (uploadsIndex !== -1) {
+          relativePath = relativePath.substring(uploadsIndex);
+        }
         updates.audioPath = relativePath;
       }
 
@@ -296,9 +292,9 @@ class MusicController {
         { $set: updates },
         { new: true, runValidators: true }
       );
+
       if (!music) return errorResponse(res, "Music not found", 404);
 
-      // Add audioUrl to response
       const musicWithUrl = {
         ...music.toObject(),
         audioUrl: getAudioUrl(music.audioPath),
@@ -317,7 +313,7 @@ class MusicController {
 
   async deleteMusic(req, res) {
     try {
-      const { id } = req.params; // music id
+      const { id } = req.params;
       const music = await Music.findById(id);
       if (!music) return errorResponse(res, "Music not found", 404);
 
@@ -332,7 +328,7 @@ class MusicController {
       logger.error("Delete music error:", error);
       return errorResponse(res, "Failed to delete music", 500);
     }
-  } // <- This closing brace was missing
+  }
 
   async setMusicStatus(req, res) {
     try {
@@ -347,9 +343,9 @@ class MusicController {
         { isActive },
         { new: true }
       );
+
       if (!music) return errorResponse(res, "Music not found", 404);
 
-      // Add audioUrl to response
       const musicWithUrl = {
         ...music.toObject(),
         audioUrl: getAudioUrl(music.audioPath),
