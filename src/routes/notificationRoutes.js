@@ -27,6 +27,12 @@ router.post(
   notificationAutomationController.sendMoodJournalReminders
 );
 router.post(
+  "/automation/inactive-users",
+  authenticate,
+  authorize("admin", "superadmin"),
+  notificationAutomationController.sendInactiveUserReminders
+);
+router.post(
   "/automation/community-suggestion",
   authenticate,
   authorize("admin", "superadmin"),

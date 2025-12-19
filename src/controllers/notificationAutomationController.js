@@ -132,6 +132,54 @@ class NotificationAutomationController {
     }
   }
 
+  async sendInactiveUserReminders(req, res) {
+    try {
+      const days =
+        Number(req.body?.days || req.query?.days) && Number(req.body?.days || req.query?.days) > 0
+          ? Number(req.body?.days || req.query?.days)
+          : 7;
+
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+
+      const users = await User.find({
+        role: "user",
+        isActive: true,
+        $or: [
+          { lastLogin: { $lt: cutoff } },
+          {
+            $and: [
+              { $or: [{ lastLogin: null }, { lastLogin: { $exists: false } }] },
+              { createdAt: { $lt: cutoff } },
+            ],
+          },
+        ],
+      }).select("_id name lastLogin createdAt");
+
+      let count = 0;
+      const now = new Date();
+
+      for (const user of users) {
+        const lastActive = user.lastLogin || user.createdAt || cutoff;
+        const diffMs = now.getTime() - lastActive.getTime();
+        const effectiveDaysInactive = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        await notificationEvents.inactiveUserReminder(
+          user,
+          Number.isFinite(effectiveDaysInactive) && effectiveDaysInactive > 0
+            ? effectiveDaysInactive
+            : days
+        );
+        count += 1;
+      }
+
+      return successResponse(res, { remindersSent: count, thresholdDays: days });
+    } catch (error) {
+      logger.error("Inactive user reminder automation error:", error);
+      return errorResponse(res, "Failed to send inactive user reminders", 500);
+    }
+  }
+
   async broadcastCommunitySuggestion(req, res) {
     try {
       const { message, userId } = req.body || {};

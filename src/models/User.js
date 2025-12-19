@@ -33,6 +33,14 @@ const userSchema = new mongoose.Schema(
       min: 13,
       max: 120,
     },
+    city: {
+      type: String,
+      trim: true,
+    },
+    state: {
+      type: String,
+      trim: true,
+    },
     role: {
       type: String,
       enum: ["user", "admin", "superadmin", "psychologist", "user-panel"],
