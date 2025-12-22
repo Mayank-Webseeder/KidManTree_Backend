@@ -326,7 +326,7 @@ class BookingController {
       if (sessionStatus) query.sessionStatus = sessionStatus;
 
       const bookings = await Booking.find(query)
-        .populate("user", "name email contact profile.avatar")
+        .populate("user", "name email contact age profile.avatar")
         .sort({ slotDate: -1, createdAt: -1 })
         .limit(limit * 1)
         .skip((page - 1) * limit);
