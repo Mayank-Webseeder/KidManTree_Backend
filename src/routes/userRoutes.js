@@ -43,12 +43,20 @@ function imageFilter(req, file, cb) {
 
 function docxFilter(req, file, cb) {
   const allowedMimes = [
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-    "application/msword", // .doc
-    "application/rtf", // .rtf fallback
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/msword",
+    "application/rtf",
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/jpg",
   ];
+
   if (!allowedMimes.includes(file.mimetype)) {
-    return cb(new Error("Only DOCX/DOC files allowed"), false);
+    return cb(
+      new Error("Only DOCX, PDF, or Image files (JPG/PNG) are allowed"),
+      false
+    );
   }
   cb(null, true);
 }

@@ -297,15 +297,17 @@ class UserController {
   async userUploadDocx(req, res) {
     try {
       if (!req.user || req.user.role !== "user") {
-        return errorResponse(res, "Only users can upload DOCX here", 403);
+        return errorResponse(res, "Only users can upload documents here", 403);
       }
       if (!req.file) {
-        return errorResponse(res, "DOCX file is required", 400);
+        return errorResponse(
+          res,
+          "File (DOCX, PDF, or Image) is required",
+          400
+        );
       }
 
-      const filePath = path
-        .join("uploads", "docx", req.file.filename)
-        .replace(/\\\\/g, "/");
+      const filePath = `uploads/docx/${req.file.filename}`;
 
       const user = await User.findByIdAndUpdate(
         req.user._id,
@@ -317,10 +319,10 @@ class UserController {
         return errorResponse(res, "User not found", 404);
       }
 
-      return successResponse(res, { user }, "Docx uploaded successfully");
+      return successResponse(res, { user }, "Document uploaded successfully");
     } catch (error) {
-      logger.error("User upload docx error:", error);
-      return errorResponse(res, "Failed to upload docx", 500);
+      logger.error("User upload document error:", error);
+      return errorResponse(res, "Failed to upload document", 500);
     }
   }
 
