@@ -293,6 +293,37 @@ class UserController {
     }
   }
 
+  // User: Upload DOCX file for verification
+  async userUploadDocx(req, res) {
+    try {
+      if (!req.user || req.user.role !== "user") {
+        return errorResponse(res, "Only users can upload DOCX here", 403);
+      }
+      if (!req.file) {
+        return errorResponse(res, "DOCX file is required", 400);
+      }
+
+      const filePath = path
+        .join("uploads", "docx", req.file.filename)
+        .replace(/\\\\/g, "/");
+
+      const user = await User.findByIdAndUpdate(
+        req.user._id,
+        { docx: filePath, isDocxVerified: false },
+        { new: true, select: "-password" }
+      );
+
+      if (!user) {
+        return errorResponse(res, "User not found", 404);
+      }
+
+      return successResponse(res, { user }, "Docx uploaded successfully");
+    } catch (error) {
+      logger.error("User upload docx error:", error);
+      return errorResponse(res, "Failed to upload docx", 500);
+    }
+  }
+
   // Admin/Superadmin: Delete a user and cascade role-specific data
   async adminDeleteUserAndRole(req, res) {
     try {

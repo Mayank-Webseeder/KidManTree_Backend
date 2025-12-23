@@ -42,13 +42,14 @@ function imageFilter(req, file, cb) {
 }
 
 function docxFilter(req, file, cb) {
-  // const allowedMimes = [
-  //   "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-  //   "application/msword", // .doc
-  // ];
-  // if (!allowedMimes.includes(file.mimetype)) {
-  //   return cb(new Error("Only DOCX files allowed"), false);
-  // }
+  const allowedMimes = [
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+    "application/msword", // .doc
+    "application/rtf", // .rtf fallback
+  ];
+  if (!allowedMimes.includes(file.mimetype)) {
+    return cb(new Error("Only DOCX/DOC files allowed"), false);
+  }
   cb(null, true);
 }
 
@@ -126,6 +127,14 @@ router.put(
   "/psychologist/me",
   authorize("psychologist"),
   userController.psychologistUpdateOwnProfile
+);
+
+// User: Upload DOCX for verification
+router.post(
+  "/me/docx",
+  authorize("user"),
+  uploadDocx.single("docx"),
+  userController.userUploadDocx
 );
 
 router.delete(
