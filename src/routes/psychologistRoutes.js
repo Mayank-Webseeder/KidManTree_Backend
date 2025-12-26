@@ -873,6 +873,177 @@ router.get("/:psychologistId/slots/:slotId", async (req, res) => {
   }
 });
 
+// Update/Edit a specific slot (psychologist only)
+router.put(
+  "/profile/me/slots/:slotId",
+  authenticate,
+  authorize("psychologist"),
+  async (req, res) => {
+    try {
+      const { slotId } = req.params;
+      const { date, startTime, endTime, isAvailable } = req.body;
+
+      const psychologist = await Psychologist.findOne({
+        email: req.user.email,
+      });
+
+      if (!psychologist) {
+        return errorResponse(res, "Psychologist profile not found", 404);
+      }
+
+      // Find the slot
+      const slot = psychologist.schedule.id(slotId);
+      if (!slot) {
+        return errorResponse(res, "Slot not found", 404);
+      }
+
+      // Check if slot is booked (cannot edit booked slots)
+      if (!slot.isAvailable && isAvailable === undefined) {
+        return errorResponse(
+          res,
+          "Cannot edit a booked slot. You can only mark it as available again if booking is cancelled.",
+          400
+        );
+      }
+
+      // Check if there's a booking for this slot
+      const hasBooking = await Booking.findOne({
+        psychologist: psychologist._id,
+        slotDate: slot.date,
+        slotStartTime: slot.startTime,
+        slotEndTime: slot.endTime,
+        status: { $nin: ["cancelled"] },
+      });
+
+      if (hasBooking) {
+        return errorResponse(
+          res,
+          "Cannot edit this slot as it has an active booking",
+          400
+        );
+      }
+
+      // Update slot fields
+      if (date) slot.date = date;
+      if (startTime) slot.startTime = startTime;
+      if (endTime) slot.endTime = endTime;
+      if (isAvailable !== undefined) slot.isAvailable = isAvailable;
+
+      await psychologist.save();
+
+      return successResponse(
+        res,
+        { slot },
+        "Slot updated successfully"
+      );
+    } catch (error) {
+      logger.error("Update slot error:", error);
+      return errorResponse(res, "Failed to update slot", 500);
+    }
+  }
+);
+
+// Delete a specific slot (psychologist only)
+router.delete(
+  "/profile/me/slots/:slotId",
+  authenticate,
+  authorize("psychologist"),
+  async (req, res) => {
+    try {
+      const { slotId } = req.params;
+
+      const psychologist = await Psychologist.findOne({
+        email: req.user.email,
+      });
+
+      if (!psychologist) {
+        return errorResponse(res, "Psychologist profile not found", 404);
+      }
+
+      // Find the slot
+      const slot = psychologist.schedule.id(slotId);
+      if (!slot) {
+        return errorResponse(res, "Slot not found", 404);
+      }
+
+      // Check if slot is booked (cannot delete booked slots)
+      if (!slot.isAvailable) {
+        return errorResponse(
+          res,
+          "Cannot delete a booked slot. Please cancel the booking first.",
+          400
+        );
+      }
+
+      // Check if there's an active booking for this slot
+      const hasBooking = await Booking.findOne({
+        psychologist: psychologist._id,
+        slotDate: slot.date,
+        slotStartTime: slot.startTime,
+        slotEndTime: slot.endTime,
+        status: { $nin: ["cancelled"] },
+      });
+
+      if (hasBooking) {
+        return errorResponse(
+          res,
+          "Cannot delete this slot as it has an active booking",
+          400
+        );
+      }
+
+      // Remove slot from schedule array
+      psychologist.schedule.pull(slotId);
+      await psychologist.save();
+
+      return successResponse(
+        res,
+        null,
+        "Slot deleted successfully"
+      );
+    } catch (error) {
+      logger.error("Delete slot error:", error);
+      return errorResponse(res, "Failed to delete slot", 500);
+    }
+  }
+);
+
+// Admin: Delete any slot (admin/superadmin only)
+router.delete(
+  "/admin/:psychologistId/slots/:slotId",
+  authenticate,
+  authorize("admin", "superadmin"),
+  async (req, res) => {
+    try {
+      const { psychologistId, slotId } = req.params;
+
+      const psychologist = await Psychologist.findById(psychologistId);
+
+      if (!psychologist) {
+        return errorResponse(res, "Psychologist not found", 404);
+      }
+
+      const slot = psychologist.schedule.id(slotId);
+      if (!slot) {
+        return errorResponse(res, "Slot not found", 404);
+      }
+
+      // Admin can force delete even booked slots
+      psychologist.schedule.pull(slotId);
+      await psychologist.save();
+
+      return successResponse(
+        res,
+        null,
+        "Slot deleted successfully by admin"
+      );
+    } catch (error) {
+      logger.error("Admin delete slot error:", error);
+      return errorResponse(res, "Failed to delete slot", 500);
+    }
+  }
+);
+
 // Get sessions for authenticated psychologist (Sessions page)
 router.get(
   "/sessions/me",

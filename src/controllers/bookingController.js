@@ -24,7 +24,9 @@ const formatSlotDetails = (slotDate, slotStartTime) => {
   const [hour, minute] = slotStartTime.split(":").map(Number);
   const period = hour >= 12 ? "PM" : "AM";
   const displayHour = ((hour + 11) % 12) + 1;
-  const timeStr = `${displayHour}:${minute.toString().padStart(2, "0")} ${period}`;
+  const timeStr = `${displayHour}:${minute
+    .toString()
+    .padStart(2, "0")} ${period}`;
   return { dateStr, timeStr };
 };
 
@@ -203,6 +205,21 @@ class BookingController {
       if (!booking) {
         return errorResponse(res, "Booking not found", 404);
       }
+
+      // Mark slot as unavailable in psychologist's schedule
+      await Psychologist.findOneAndUpdate(
+        {
+          _id: booking.psychologist._id,
+          "schedule.date": booking.slotDate,
+          "schedule.startTime": booking.slotStartTime,
+          "schedule.endTime": booking.slotEndTime,
+        },
+        {
+          $set: {
+            "schedule.$.isAvailable": false,
+          },
+        }
+      );
 
       // Increment psychologist's total sessions
       await Psychologist.findByIdAndUpdate(booking.psychologist._id, {
