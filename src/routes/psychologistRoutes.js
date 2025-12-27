@@ -134,6 +134,7 @@ router.post(
   "/",
   authenticate,
   authorize("admin", "superadmin"),
+  uploadFiles,
   psychologistController.create
 );
 
@@ -141,6 +142,7 @@ router.put(
   "/:id([a-fA-F0-9]{24})",
   authenticate,
   authorize("admin", "superadmin"),
+  uploadFiles,
   psychologistController.update
 );
 

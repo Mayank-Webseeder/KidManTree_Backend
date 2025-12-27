@@ -624,6 +624,7 @@ class PsychologistController {
 
   async create(req, res) {
     try {
+      const files = req.files || {};
       const {
         firstName,
         lastName,
@@ -639,11 +640,36 @@ class PsychologistController {
         contactNumber,
         role,
         aadharNumber,
-        aadharDocument,
         uploadDocuments,
         schedule,
-        profileImage,
       } = req.body;
+
+      // Determine uploaded/provided file paths
+      let profileImagePath = req.body.profileImage || null;
+      if (files.profileImage && files.profileImage[0]) {
+        profileImagePath = `uploads/profiles/${files.profileImage[0].filename}`;
+      }
+
+      let aadharDocumentPath = req.body.aadharDocument || null;
+      if (files.aadharDocument && files.aadharDocument[0]) {
+        aadharDocumentPath = `uploads/documents/${files.aadharDocument[0].filename}`;
+      }
+
+      // uploadDocuments can be provided in body as array/JSON string OR via files
+      let uploadDocs = [];
+      if (Array.isArray(uploadDocuments)) uploadDocs = uploadDocuments;
+      else if (typeof uploadDocuments === "string" && uploadDocuments.trim()) {
+        try {
+          uploadDocs = JSON.parse(uploadDocuments);
+        } catch (e) {
+          uploadDocs = [uploadDocuments];
+        }
+      }
+
+      if (files.uploadDocuments && Array.isArray(files.uploadDocuments)) {
+        const docFiles = files.uploadDocuments.map((f) => `uploads/documents/${f.filename}`);
+        uploadDocs = [...uploadDocs, ...docFiles];
+      }
 
       if (
         !firstName ||
@@ -655,7 +681,7 @@ class PsychologistController {
         !city ||
         !contactNumber ||
         !aadharNumber ||
-        !aadharDocument
+        !aadharDocumentPath
       ) {
         return errorResponse(
           res,
@@ -719,10 +745,10 @@ class PsychologistController {
         contactNumber,
         role: role || "psychologist",
         aadharNumber,
-        aadharDocument,
-        uploadDocuments: uploadDocuments || [],
+        aadharDocument: aadharDocumentPath,
+        uploadDocuments: uploadDocs || [],
         schedule: Array.isArray(schedule) ? schedule : [],
-        profileImage,
+        profileImage: profileImagePath,
         isActive: true,
         status: "selected",
         accountActivatedAt: new Date(),
@@ -749,9 +775,58 @@ class PsychologistController {
 
   async update(req, res) {
     try {
+      const files = req.files || {};
+
+      // Fetch existing to merge uploadDocuments if needed
+      const existing = await Psychologist.findById(req.params.id);
+      if (!existing) return errorResponse(res, "Psychologist not found", 404);
+
+      const updateData = { ...req.body };
+
+      // Profile image
+      if (files.profileImage && files.profileImage[0]) {
+        updateData.profileImage = `uploads/profiles/${files.profileImage[0].filename}`;
+      }
+
+      // Aadhar document
+      if (files.aadharDocument && files.aadharDocument[0]) {
+        updateData.aadharDocument = `uploads/documents/${files.aadharDocument[0].filename}`;
+      }
+
+      // Prepare uploadDocuments from body and files
+      let bodyDocs = [];
+      if (req.body.uploadDocuments) {
+        if (Array.isArray(req.body.uploadDocuments)) bodyDocs = req.body.uploadDocuments;
+        else {
+          try {
+            bodyDocs = JSON.parse(req.body.uploadDocuments);
+            if (!Array.isArray(bodyDocs)) bodyDocs = [bodyDocs];
+          } catch (e) {
+            bodyDocs = [req.body.uploadDocuments];
+          }
+        }
+      }
+
+      let fileDocs = [];
+      if (files.uploadDocuments && Array.isArray(files.uploadDocuments)) {
+        fileDocs = files.uploadDocuments.map((f) => `uploads/documents/${f.filename}`);
+      }
+
+      const newDocs = [...bodyDocs, ...fileDocs];
+
+      const replaceFlag =
+        req.body.replaceUploadDocuments === true ||
+        req.body.replaceUploadDocuments === "true";
+
+      if (newDocs.length > 0) {
+        updateData.uploadDocuments = replaceFlag
+          ? newDocs
+          : [...(existing.uploadDocuments || []), ...newDocs];
+      }
+
       const psychologist = await Psychologist.findByIdAndUpdate(
         req.params.id,
-        req.body,
+        updateData,
         { new: true, runValidators: true }
       );
 
