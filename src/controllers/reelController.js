@@ -129,7 +129,7 @@ class ReelController {
 
   async listReels(req, res) {
     try {
-      const reels = await Reel.find({ isActive: true })
+      const reels = await Reel.find({})
         .sort({ createdAt: -1 })
         .populate("createdBy", "name email");
 

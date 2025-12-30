@@ -142,13 +142,10 @@ class MusicController {
   async getMusicByCategory(req, res) {
     try {
       const { categoryId } = req.params;
-      const { includeInactive } = req.query;
       const category = await MusicCategory.findById(categoryId);
       if (!category) return errorResponse(res, "Category not found", 404);
 
       const query = { category: categoryId };
-      if (!includeInactive || includeInactive === "false")
-        query.isActive = true;
 
       const musics = await Music.find(query).sort({ createdAt: -1 });
 
