@@ -6,33 +6,27 @@ const { successResponse, errorResponse } = require("../utils/response");
 const logger = require("../utils/logger");
 const emailService = require("../services/emailService");
 
+const normalizeTime = (timeStr) => {
+  if (!timeStr) return null;
+  const [h, m] = String(timeStr).split(":");
+  return `${h.toString().padStart(2, "0")}:${(m ?? "00")
+    .toString()
+    .padStart(2, "0")}`;
+};
+
+const timeToMinutes = (timeStr) => {
+  if (!timeStr) return 0;
+  const [h, m] = String(timeStr).split(":").map(Number);
+  return h * 60 + (m || 0);
+};
+
+const isOverlapping = (aStart, aEnd, bStart, bEnd) => {
+  return aStart < bEnd && bStart < aEnd;
+};
 class PsychologistController {
   getMeetingLink(booking) {
     if (!booking) return null;
     return booking.meetingLink || null;
-  }
-
-  normalizeTime(time) {
-    time = time.trim().toUpperCase(); // "02:00 PM"
-
-    const [hourMin, ampm] = time.split(" ");
-    let [hour, minute] = hourMin.split(":").map(Number);
-
-    if (ampm === "PM" && hour !== 12) hour += 12;
-    if (ampm === "AM" && hour === 12) hour = 0;
-
-    return `${hour.toString().padStart(2, "0")}:${minute
-      .toString()
-      .padStart(2, "0")}`;
-  }
-
-  timeToMinutes(t) {
-    const [h, m] = t.split(":").map(Number);
-    return h * 60 + m;
-  }
-
-  isOverlapping(start1, end1, start2, end2) {
-    return start1 < end2 && start2 < end1;
   }
 
   async getAll(req, res) {
@@ -125,7 +119,9 @@ class PsychologistController {
       }
 
       if (files.uploadDocuments && Array.isArray(files.uploadDocuments)) {
-        const docFiles = files.uploadDocuments.map((f) => `uploads/documents/${f.filename}`);
+        const docFiles = files.uploadDocuments.map(
+          (f) => `uploads/documents/${f.filename}`
+        );
         uploadDocs = [...uploadDocs, ...docFiles];
       }
 
@@ -380,7 +376,8 @@ class PsychologistController {
       // Prepare uploadDocuments from body (array or JSON string) and files
       let bodyDocs = [];
       if (req.body.uploadDocuments) {
-        if (Array.isArray(req.body.uploadDocuments)) bodyDocs = req.body.uploadDocuments;
+        if (Array.isArray(req.body.uploadDocuments))
+          bodyDocs = req.body.uploadDocuments;
         else {
           try {
             bodyDocs = JSON.parse(req.body.uploadDocuments);
@@ -393,7 +390,9 @@ class PsychologistController {
 
       let fileDocs = [];
       if (files.uploadDocuments && Array.isArray(files.uploadDocuments)) {
-        fileDocs = files.uploadDocuments.map((f) => `uploads/documents/${f.filename}`);
+        fileDocs = files.uploadDocuments.map(
+          (f) => `uploads/documents/${f.filename}`
+        );
       }
 
       const newDocs = [...bodyDocs, ...fileDocs];
@@ -427,6 +426,79 @@ class PsychologistController {
     }
   }
 
+  // async addSlotsMe(req, res) {
+  //   try {
+  //     let { dates, timeSlots, isAvailable = true } = req.body;
+
+  //     if (!Array.isArray(dates) || dates.length === 0) {
+  //       return errorResponse(res, "dates must be a non-empty array", 400);
+  //     }
+
+  //     if (!Array.isArray(timeSlots) || timeSlots.length === 0) {
+  //       return errorResponse(res, "timeSlots must be a non-empty array", 400);
+  //     }
+
+  //     // Normalize all times
+  //     timeSlots = timeSlots.map((slot) => ({
+  //       startTime: this.normalizeTime(slot.startTime),
+  //       endTime: this.normalizeTime(slot.endTime),
+  //     }));
+
+  //     const psychologist = await Psychologist.findOne({
+  //       email: req.user.email,
+  //     });
+
+  //     if (!psychologist) {
+  //       return errorResponse(res, "Psychologist profile not found", 404);
+  //     }
+
+  //     // Check overlap with existing slots
+  //     for (const date of dates) {
+  //       for (const newSlot of timeSlots) {
+  //         const startMin = this.timeToMinutes(newSlot.startTime);
+  //         const endMin = this.timeToMinutes(newSlot.endTime);
+
+  //         for (const slot of psychologist.schedule) {
+  //           if (slot.date === date) {
+  //             const s = this.timeToMinutes(slot.startTime);
+  //             const e = this.timeToMinutes(slot.endTime);
+
+  //             if (this.isOverlapping(startMin, endMin, s, e)) {
+  //               return errorResponse(
+  //                 res,
+  //                 `Overlap on ${date}: (${newSlot.startTime} - ${newSlot.endTime}) conflicts with existing slot (${slot.startTime} - ${slot.endTime})`,
+  //                 400
+  //               );
+  //             }
+  //           }
+  //         }
+  //       }
+  //     }
+
+  //     // Insert all dates × timeSlots combinations
+  //     for (const date of dates) {
+  //       for (const slot of timeSlots) {
+  //         psychologist.schedule.push({
+  //           date,
+  //           startTime: slot.startTime,
+  //           endTime: slot.endTime,
+  //           isAvailable,
+  //         });
+  //       }
+  //     }
+
+  //     await psychologist.save();
+
+  //     return successResponse(
+  //       res,
+  //       { schedule: psychologist.schedule },
+  //       "Multiple slots added successfully"
+  //     );
+  //   } catch (error) {
+  //     console.error("Add schedule slot error:", error);
+  //     return errorResponse(res, "Failed to add schedule slot", 500);
+  //   }
+  // }
   async addSlotsMe(req, res) {
     try {
       let { dates, timeSlots, isAvailable = true } = req.body;
@@ -439,10 +511,9 @@ class PsychologistController {
         return errorResponse(res, "timeSlots must be a non-empty array", 400);
       }
 
-      // Normalize all times
       timeSlots = timeSlots.map((slot) => ({
-        startTime: this.normalizeTime(slot.startTime),
-        endTime: this.normalizeTime(slot.endTime),
+        startTime: normalizeTime(slot.startTime),
+        endTime: normalizeTime(slot.endTime),
       }));
 
       const psychologist = await Psychologist.findOne({
@@ -453,18 +524,22 @@ class PsychologistController {
         return errorResponse(res, "Psychologist profile not found", 404);
       }
 
-      // Check overlap with existing slots
       for (const date of dates) {
         for (const newSlot of timeSlots) {
-          const startMin = this.timeToMinutes(newSlot.startTime);
-          const endMin = this.timeToMinutes(newSlot.endTime);
+          const startMin = timeToMinutes(newSlot.startTime);
+          const endMin = timeToMinutes(newSlot.endTime);
 
           for (const slot of psychologist.schedule) {
-            if (slot.date === date) {
-              const s = this.timeToMinutes(slot.startTime);
-              const e = this.timeToMinutes(slot.endTime);
+            const existingDate =
+              slot.date instanceof Date
+                ? slot.date.toISOString().split("T")[0]
+                : slot.date;
 
-              if (this.isOverlapping(startMin, endMin, s, e)) {
+            if (existingDate === date) {
+              const s = timeToMinutes(slot.startTime);
+              const e = timeToMinutes(slot.endTime);
+
+              if (isOverlapping(startMin, endMin, s, e)) {
                 return errorResponse(
                   res,
                   `Overlap on ${date}: (${newSlot.startTime} - ${newSlot.endTime}) conflicts with existing slot (${slot.startTime} - ${slot.endTime})`,
@@ -476,7 +551,6 @@ class PsychologistController {
         }
       }
 
-      // Insert all dates × timeSlots combinations
       for (const date of dates) {
         for (const slot of timeSlots) {
           psychologist.schedule.push({
@@ -667,7 +741,9 @@ class PsychologistController {
       }
 
       if (files.uploadDocuments && Array.isArray(files.uploadDocuments)) {
-        const docFiles = files.uploadDocuments.map((f) => `uploads/documents/${f.filename}`);
+        const docFiles = files.uploadDocuments.map(
+          (f) => `uploads/documents/${f.filename}`
+        );
         uploadDocs = [...uploadDocs, ...docFiles];
       }
 
@@ -796,7 +872,8 @@ class PsychologistController {
       // Prepare uploadDocuments from body and files
       let bodyDocs = [];
       if (req.body.uploadDocuments) {
-        if (Array.isArray(req.body.uploadDocuments)) bodyDocs = req.body.uploadDocuments;
+        if (Array.isArray(req.body.uploadDocuments))
+          bodyDocs = req.body.uploadDocuments;
         else {
           try {
             bodyDocs = JSON.parse(req.body.uploadDocuments);
@@ -809,7 +886,9 @@ class PsychologistController {
 
       let fileDocs = [];
       if (files.uploadDocuments && Array.isArray(files.uploadDocuments)) {
-        fileDocs = files.uploadDocuments.map((f) => `uploads/documents/${f.filename}`);
+        fileDocs = files.uploadDocuments.map(
+          (f) => `uploads/documents/${f.filename}`
+        );
       }
 
       const newDocs = [...bodyDocs, ...fileDocs];
@@ -1009,11 +1088,7 @@ class PsychologistController {
 
       await psychologist.save();
 
-      return successResponse(
-        res,
-        { slot },
-        "Slot updated successfully"
-      );
+      return successResponse(res, { slot }, "Slot updated successfully");
     } catch (error) {
       logger.error("Update slot error:", error);
       return errorResponse(res, "Failed to update slot", 500);
@@ -1068,11 +1143,7 @@ class PsychologistController {
       psychologist.schedule.pull(slotId);
       await psychologist.save();
 
-      return successResponse(
-        res,
-        null,
-        "Slot deleted successfully"
-      );
+      return successResponse(res, null, "Slot deleted successfully");
     } catch (error) {
       logger.error("Delete slot error:", error);
       return errorResponse(res, "Failed to delete slot", 500);
@@ -1098,11 +1169,7 @@ class PsychologistController {
       psychologist.schedule.pull(slotId);
       await psychologist.save();
 
-      return successResponse(
-        res,
-        null,
-        "Slot deleted successfully by admin"
-      );
+      return successResponse(res, null, "Slot deleted successfully by admin");
     } catch (error) {
       logger.error("Admin delete slot error:", error);
       return errorResponse(res, "Failed to delete slot", 500);
