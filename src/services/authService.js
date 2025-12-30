@@ -753,41 +753,6 @@ class AuthService {
     };
   }
 
-  // // Reset password using OTP
-  // async resetPasswordWithOTP(email, otp, newPassword, confirmPassword) {
-  //   if (newPassword !== confirmPassword) {
-  //     throw new Error('New password and confirm password do not match');
-  //   }
-
-  //   const user = await User.findOne({ email, isActive: true });
-  //   if (!user) {
-  //     throw new Error('User not found');
-  //   }
-
-  //   const resetData = user.reset || {};
-  //   if (!resetData.otp || resetData.otp !== otp) {
-  //     throw new Error('Invalid OTP');
-  //   }
-  //   if (new Date() > resetData.expiresAt) {
-  //     throw new Error('OTP expired');
-  //   }
-
-  //   // Hash new password
-  //   const hashedPassword = await bcrypt.hash(newPassword, 12);
-
-  //   await User.findByIdAndUpdate(user._id, {
-  //     $set: { password: hashedPassword },
-  //     $unset: { reset: 1 }
-  //   });
-
-  //   logger.info(`Password reset successfully for: ${email}`);
-
-  //   return {
-  //     success: true,
-  //     message: 'Password has been reset successfully'
-  //   };
-  // }
-
   async resetPasswordWithOTP(email, otp, newPassword, confirmPassword) {
     if (newPassword !== confirmPassword) {
       throw new Error('New password and confirm password do not match');
