@@ -207,19 +207,37 @@ class BookingController {
       }
 
       // Mark slot as unavailable in psychologist's schedule
-      await Psychologist.findOneAndUpdate(
+      const slotDateOnly = new Date(booking.slotDate);
+      slotDateOnly.setUTCHours(0, 0, 0, 0);
+
+      const updateResult = await Psychologist.findOneAndUpdate(
         {
           _id: booking.psychologist._id,
-          "schedule.date": booking.slotDate,
-          "schedule.startTime": booking.slotStartTime,
-          "schedule.endTime": booking.slotEndTime,
+          schedule: {
+            $elemMatch: {
+              date: slotDateOnly,
+              startTime: booking.slotStartTime,
+              endTime: booking.slotEndTime,
+              isAvailable: true,
+            },
+          },
         },
         {
           $set: {
             "schedule.$.isAvailable": false,
           },
-        }
+        },
+        { new: true }
       );
+
+      // Log if slot update failed
+      if (!updateResult) {
+        logger.warn(
+          `Failed to mark slot unavailable for booking ${bookingId}. ` +
+            `Psychologist: ${booking.psychologist._id}, Date: ${slotDateOnly}, ` +
+            `Time: ${booking.slotStartTime}-${booking.slotEndTime}`
+        );
+      }
 
       // Increment psychologist's total sessions
       await Psychologist.findByIdAndUpdate(booking.psychologist._id, {
